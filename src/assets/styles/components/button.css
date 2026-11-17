@@ -1,0 +1,115 @@
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.25;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+  text-decoration: none;
+}
+
+.app-btn--full {
+  width: 100%;
+}
+
+.app-btn__content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.app-btn__content--hidden {
+  opacity: 0;
+}
+
+/* Primary Variant (Deep Teal) */
+.app-btn--primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(8, 93, 126, 0.2);
+}
+
+.app-btn--primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  box-shadow: 0 4px 8px rgba(8, 93, 126, 0.25);
+  transform: translateY(-1px);
+}
+
+.app-btn--primary:active:not(:disabled) {
+  background-color: var(--color-primary-active);
+  transform: translateY(0);
+}
+
+/* Outline Variant (Light border with white background) */
+.app-btn--outline {
+  background-color: #ffffff;
+  color: var(--color-text-main);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-btn--outline:hover:not(:disabled) {
+  background-color: var(--color-bg-subtle);
+  border-color: var(--color-border-hover);
+}
+
+.app-btn--outline:active:not(:disabled) {
+  background-color: var(--color-bg-muted);
+}
+
+/* Subtle Variant */
+.app-btn--subtle {
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-body);
+}
+
+.app-btn--subtle:hover:not(:disabled) {
+  background-color: #e2e8f0;
+}
+
+/* Ghost Variant */
+.app-btn--ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.app-btn--ghost:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: var(--color-text-main);
+}
+
+.app-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Loading Spinner */
+.app-btn__spinner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.app-btn--outline .app-btn__spinner {
+  border-color: rgba(8, 93, 126, 0.2);
+  border-top-color: var(--color-primary);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

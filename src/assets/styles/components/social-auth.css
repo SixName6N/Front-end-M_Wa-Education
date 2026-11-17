@@ -1,0 +1,73 @@
+.social-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  width: 100%;
+}
+
+.social-auth__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.25rem 0;
+}
+
+.social-auth__divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-border);
+}
+
+.social-auth__divider-text {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.social-auth__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.social-auth__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6875rem 1rem;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-body);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.social-auth__btn:hover {
+  background-color: #ffffff;
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.social-auth__btn:active {
+  transform: translateY(0);
+}
+
+.social-auth__btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.social-auth__btn-icon--dopa {
+  color: var(--color-primary);
+}
+
+.social-auth__btn-label {
+  line-height: 1.3;
+}
