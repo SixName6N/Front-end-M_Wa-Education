@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { USER_ROLES } from '@/constants/auth.constants'
-import { authService } from '@/services/authService'
+import { authService, hasStoredSession } from '@/services/authService'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -25,6 +25,13 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /** ตั้ง session จาก user ที่ได้จาก API */
+    applySession(user) {
+      this.user = user
+      this.isAuthenticated = true
+      if (user?.role) this.currentRole = user.role
+    },
+
     async login(credentials) {
       this.isLoading = true
       this.error = null
@@ -33,14 +40,26 @@ export const useAuthStore = defineStore('auth', {
           ...credentials,
           role: this.currentRole
         })
-        this.user = result.user
-        this.isAuthenticated = true
+        this.applySession(result.user)
         return result
       } catch (err) {
         this.error = err.message || 'การเข้าสู่ระบบล้มเหลว กรุณาตรวจสอบข้อมูลอีกครั้ง'
         throw err
       } finally {
         this.isLoading = false
+      }
+    },
+
+    /** กู้ session เดิมตอนเปิดแอป ถ้ามี token เก็บอยู่ */
+    async restore() {
+      if (this.isAuthenticated || !hasStoredSession()) return
+      try {
+        const user = await authService.me()
+        this.applySession(user)
+      } catch {
+        // token หมดอายุ/ไม่ถูกต้อง — ถือว่ายังไม่ล็อกอิน
+        this.user = null
+        this.isAuthenticated = false
       }
     },
 
@@ -58,10 +77,14 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    logout() {
-      this.user = null
-      this.isAuthenticated = false
-      this.error = null
+    async logout() {
+      try {
+        await authService.logout()
+      } finally {
+        this.user = null
+        this.isAuthenticated = false
+        this.error = null
+      }
     }
   }
 })

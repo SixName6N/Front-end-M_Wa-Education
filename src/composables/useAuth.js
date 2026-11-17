@@ -44,8 +44,9 @@ export function useAuth() {
         rememberMe: form.rememberMe
       })
       loginSuccessMessage.value = 'เข้าสู่ระบบสำเร็จ กำลังนำท่านเข้าสู่ระบบ...'
+      const destination = authStore.isTeacher ? '/teacher/students' : '/student/exams'
       setTimeout(() => {
-        router.push('/student/exams')
+        router.push(destination)
       }, 1000)
     } catch (err) {
       console.error(err)
