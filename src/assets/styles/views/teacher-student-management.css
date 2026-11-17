@@ -1,0 +1,27 @@
+.student-mgmt-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 12-column workspace grid */
+.student-mgmt-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .student-mgmt-grid {
+    grid-template-columns: repeat(12, 1fr);
+  }
+
+  .student-mgmt-grid__left {
+    grid-column: span 8;
+  }
+
+  .student-mgmt-grid__right {
+    grid-column: span 4;
+  }
+}

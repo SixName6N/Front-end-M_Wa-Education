@@ -1,0 +1,106 @@
+.exam-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+/* Search Box */
+.exam-filter__search {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+}
+
+.exam-filter__search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-placeholder);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.exam-filter__search-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 16px 0 40px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background-color: #ffffff;
+  font-size: 14px;
+  color: var(--color-text-main);
+  outline: none;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.exam-filter__search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-focus);
+}
+
+.exam-filter__search-input::placeholder {
+  color: var(--color-text-placeholder);
+  font-size: 13px;
+}
+
+/* Options / Pills */
+.exam-filter__options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.exam-filter__pill {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background-color: #ffffff;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.exam-filter__pill:hover {
+  border-color: var(--color-border-hover);
+  color: var(--color-text-main);
+}
+
+.exam-filter__pill--active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(8, 93, 126, 0.2);
+}
+
+@media (max-width: 680px) {
+  .exam-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .exam-filter__search {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .exam-filter__options {
+    width: 100%;
+    padding-bottom: 4px;
+  }
+
+  .exam-filter__pill {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}

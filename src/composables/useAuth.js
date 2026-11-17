@@ -45,7 +45,7 @@ export function useAuth() {
       })
       loginSuccessMessage.value = 'เข้าสู่ระบบสำเร็จ กำลังนำท่านเข้าสู่ระบบ...'
       setTimeout(() => {
-        router.push('/')
+        router.push('/student/exams')
       }, 1000)
     } catch (err) {
       console.error(err)

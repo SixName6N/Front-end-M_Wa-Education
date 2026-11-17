@@ -1,0 +1,52 @@
+.exam-guidelines {
+  background-color: #f0fdfa;
+  border: 1px solid #ccfbf1;
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 32px;
+}
+
+.exam-guidelines__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.exam-guidelines__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.exam-guidelines__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: #134e4a;
+  line-height: 1.45;
+}
+
+.exam-guidelines__icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  margin-top: 1px;
+}
+
+.exam-guidelines__text strong {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+@media (max-width: 860px) {
+  .exam-guidelines__grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}

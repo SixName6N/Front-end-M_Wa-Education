@@ -1,0 +1,300 @@
+.roster-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Toolbar */
+.roster-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .roster-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.roster-search {
+  position: relative;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .roster-search {
+    width: 320px;
+  }
+}
+
+.roster-search__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.roster-search__input {
+  width: 100%;
+  height: 38px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0 14px 0 36px;
+  font-size: 14px;
+  color: #1f2937;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.roster-search__input:focus {
+  border-color: #015b7e;
+  box-shadow: 0 0 0 1px #015b7e;
+}
+
+.roster-search__input::placeholder {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.roster-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.roster-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.roster-action-btn:hover {
+  background-color: #f9fafb;
+}
+
+/* Table Card */
+.roster-table-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.roster-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.roster-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.roster-table th {
+  background-color: rgba(249, 250, 251, 0.8);
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.roster-table td {
+  padding: 14px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+}
+
+.roster-table tbody tr:hover {
+  background-color: rgba(248, 250, 252, 0.8);
+}
+
+.roster-table__checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #015b7e;
+  cursor: pointer;
+}
+
+.roster-table__seat {
+  font-weight: 500;
+  color: #6b7280;
+  width: 60px;
+}
+
+.roster-table__id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #6b7280;
+  width: 90px;
+}
+
+.roster-table__name {
+  color: #111827;
+  font-weight: 400;
+}
+
+/* Status Badges */
+.roster-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.roster-status-badge--graded {
+  background-color: #ecfdf5;
+  color: #047857;
+}
+
+.roster-status-badge--graded .roster-status-dot {
+  background-color: #10b981;
+}
+
+.roster-status-badge--pending {
+  background-color: #fef7ea;
+  color: #a06500;
+  border: 1px solid #f3d58d;
+}
+
+.roster-status-badge--pending .roster-status-dot {
+  background-color: #e59e2c;
+}
+
+.roster-status-badge--unsubmitted {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.roster-status-badge--unsubmitted .roster-status-dot {
+  background-color: #9ca3af;
+}
+
+.roster-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Score cell */
+.roster-table__score {
+  text-align: center;
+  font-weight: 600;
+  color: #015b7e;
+}
+
+.roster-table__score--empty {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.roster-table__score-max {
+  font-size: 12px;
+  font-weight: normal;
+  color: #9ca3af;
+}
+
+/* Manage cell */
+.roster-table__manage {
+  text-align: right;
+}
+
+.roster-btn-link {
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all var(--transition-fast);
+}
+
+.roster-btn-link--primary {
+  color: #015b7e;
+}
+
+.roster-btn-link--teal {
+  color: #0d8aaa;
+}
+
+.roster-btn-link--muted {
+  color: #6b7280;
+}
+
+.roster-btn-link:hover {
+  text-decoration: underline;
+}
+
+/* Pagination Footer */
+.roster-pagination {
+  padding: 12px 16px;
+  background-color: rgba(249, 250, 251, 0.5);
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.roster-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.roster-pagination__btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.roster-pagination__btn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+.roster-pagination__btn--active {
+  background-color: #015b7e !important;
+  color: #ffffff !important;
+  border-color: #015b7e !important;
+  font-weight: 500;
+}
+
+.roster-pagination__btn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}

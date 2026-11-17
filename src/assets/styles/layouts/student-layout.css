@@ -1,0 +1,226 @@
+.student-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+  color: var(--color-text-main);
+}
+
+/* Navbar */
+.student-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.student-navbar__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.student-navbar__left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.student-navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.student-navbar__logo {
+  width: 34px;
+  height: 34px;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-navbar__brand-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Nav Menu */
+.student-navbar__menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-navbar__link {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.student-navbar__link:hover {
+  color: var(--color-text-main);
+  background-color: #f1f5f9;
+}
+
+.student-navbar__link--active {
+  background-color: var(--color-primary);
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Right Section */
+.student-navbar__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.student-navbar__role-badge {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.student-navbar__icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.student-navbar__icon-btn:hover {
+  background-color: #f1f5f9;
+  color: var(--color-text-main);
+}
+
+.student-navbar__profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 6px;
+  border-left: 1px solid var(--color-border);
+}
+
+.student-navbar__user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  line-height: 1.25;
+}
+
+.student-navbar__user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.student-navbar__user-class {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.student-navbar__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Main Content */
+.student-layout__main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+/* Footer */
+.student-footer {
+  background-color: #ffffff;
+  border-top: 1px solid var(--color-border);
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.student-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.student-footer__link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.student-footer__link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .student-navbar__user-info {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .student-navbar__inner {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .student-navbar__menu {
+    display: none;
+  }
+
+  .student-layout__main {
+    padding: 16px 12px 36px;
+  }
+
+  .student-footer__inner {
+    flex-direction: column;
+    text-align: center;
+  }
+}

@@ -1,0 +1,92 @@
+.exam-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Section styling */
+.exam-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.exam-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exam-section__title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exam-section__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+}
+
+.exam-section__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-heading);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exam-section__badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background-color: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.exam-section__hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Exams Grid */
+.exam-section__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.exam-section__empty {
+  padding: 32px;
+  text-align: center;
+  background-color: #ffffff;
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .exam-section__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .exam-section__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .exam-section__hint {
+    font-size: 11px;
+  }
+}
