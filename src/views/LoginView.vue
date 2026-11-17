@@ -115,17 +115,12 @@
             :block="true"
             :loading="isSubmitting"
           >
-            <span>เข้าสู่ระบบ (Sign In)</span>
+            <span>เข้าสู่ระบบ</span>
             <template #icon-right>
               <IconArrowRight size="16" />
             </template>
           </AppButton>
         </form>
-
-        <!-- Social SSO Login (Google / D.DOPA) -->
-        <div class="login-card__section">
-          <SocialAuth @sso="handleSSO" />
-        </div>
 
         <!-- Registration & IT Support Footnote -->
         <div class="login-card__footer-notes">

@@ -8,22 +8,13 @@
     <header class="auth-layout__header">
       <div class="auth-layout__header-inner">
         <!-- Back Button -->
-        <button
-          type="button"
-          class="auth-layout__back-btn"
-          @click="handleBack"
-          aria-label="ย้อนกลับ"
-        >
-          <IconArrowLeft size="16" />
-          <span>Back</span>
+        <button>
+          
         </button>
 
         <!-- Brand Center -->
         <div class="auth-layout__brand">
-          <div class="auth-layout__brand-icon">
-            <IconExamHub size="18" />
-          </div>
-          <span class="auth-layout__brand-name">ExamHub</span>
+         
         </div>
 
         <!-- Language Selector -->
