@@ -57,6 +57,14 @@ const router = createRouter({
       }
     },
     {
+      path: '/teacher/grading',
+      name: 'teacher-grading',
+      component: () => import('@/views/TeacherGradingView.vue'),
+      meta: {
+        title: 'ตรวจข้อสอบ (Grading & Assessment) - ExamHub'
+      }
+    },
+    {
       path: '/teacher/exam-bank',
       redirect: '/teacher/exams'
     },

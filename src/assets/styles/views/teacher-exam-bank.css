@@ -1,0 +1,723 @@
+/* ==========================================================================
+   TEACHER EXAM BANK VIEW - ACADEMIC CLARITY DESIGN
+   Matches DESIGN.md and stitch_online_exam_assessment_system (3)
+   ========================================================================== */
+
+.bank-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  font-family: 'Prompt', 'Inter', sans-serif;
+  color: #1a1c1c;
+}
+
+/* Material Symbols helper */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  vertical-align: middle;
+}
+
+/* Top Command & Metric Bar */
+.bank-top-bar {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+}
+
+.bank-top-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .bank-top-inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.bank-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.bank-breadcrumb__current {
+  color: #015b7e;
+  font-weight: 600;
+}
+
+.bank-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.bank-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.bank-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.bank-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.bank-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.bank-btn--primary {
+  background-color: #015b7e;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(1, 91, 126, 0.2);
+}
+
+.bank-btn--primary:hover {
+  background-color: #0d8aaa;
+  box-shadow: 0 4px 10px rgba(1, 91, 126, 0.3);
+}
+
+.bank-btn--secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+.bank-btn--secondary:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.bank-btn--edit {
+  background-color: #f3f4f6;
+  color: #015b7e;
+  font-size: 13px;
+  padding: 6px 14px;
+}
+
+.bank-btn--edit:hover {
+  background-color: #e0f2fe;
+}
+
+.bank-btn--monitoring {
+  background-color: #006780;
+  color: #ffffff;
+  font-size: 13px;
+  padding: 6px 14px;
+  box-shadow: 0 1px 2px rgba(0, 103, 128, 0.2);
+}
+
+.bank-btn--monitoring:hover {
+  background-color: #004d61;
+}
+
+.bank-btn--review {
+  background-color: #ffedd5;
+  color: #9a3412;
+  font-size: 13px;
+  padding: 6px 14px;
+}
+
+.bank-btn--review:hover {
+  background-color: #fed7aa;
+}
+
+.bank-btn--danger {
+  background-color: #ba1a1a;
+  color: #ffffff;
+}
+
+.bank-btn--danger:hover {
+  background-color: #93000a;
+}
+
+.bank-del-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bank-del-btn:hover {
+  background-color: #fee2e2;
+  color: #ba1a1a;
+}
+
+/* Course Tabs */
+.bank-course-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.bank-tab-pill {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  background-color: #f3f4f6;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bank-tab-pill:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.bank-tab-pill--active {
+  background-color: #015b7e;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(1, 91, 126, 0.2);
+}
+
+/* Search & Quick Filters */
+.bank-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .bank-filter-bar {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.bank-search-wrap {
+  position: relative;
+  flex: 1;
+  width: 100%;
+}
+
+.bank-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.bank-search-input {
+  width: 100%;
+  padding: 9px 36px 9px 38px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.15s ease;
+}
+
+.bank-search-input:focus {
+  border-color: #015b7e;
+  box-shadow: 0 0 0 2px rgba(1, 91, 126, 0.15);
+}
+
+.bank-clear-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.bank-clear-btn:hover {
+  color: #111827;
+}
+
+.bank-dropdowns-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .bank-dropdowns-row {
+    width: auto;
+  }
+}
+
+.bank-select-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 130px;
+}
+
+@media (min-width: 640px) {
+  .bank-select-wrap {
+    flex: none;
+  }
+}
+
+.bank-select {
+  width: 100%;
+  appearance: none;
+  padding: 9px 30px 9px 12px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.15s ease;
+}
+
+.bank-select:focus {
+  border-color: #015b7e;
+  box-shadow: 0 0 0 2px rgba(1, 91, 126, 0.15);
+}
+
+.bank-select-arrow {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+/* Exam Cards Stack */
+.bank-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bank-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.15s ease;
+}
+
+@media (min-width: 768px) {
+  .bank-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.bank-card:hover {
+  box-shadow: 0 4px 12px rgba(1, 91, 126, 0.07);
+}
+
+.bank-card-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bank-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Status Pills */
+.bank-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bank-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.bank-status-pill--published {
+  background-color: #e2f2e9;
+  color: #156634;
+}
+
+.bank-status-pill--published .bank-status-dot {
+  background-color: #156634;
+}
+
+.bank-status-pill--active {
+  background-color: #b8eaff;
+  color: #004d61;
+}
+
+.bank-status-pill--active .bank-status-dot {
+  background-color: #006780;
+}
+
+.bank-status-pill--draft {
+  background-color: #e2e2e2;
+  color: #40484e;
+}
+
+.bank-status-pill--draft .bank-status-dot {
+  background-color: #70787e;
+}
+
+.bank-status-pill--review {
+  background-color: #ffddb4;
+  color: #633f00;
+}
+
+.bank-status-pill--review .bank-status-dot {
+  background-color: #764c00;
+}
+
+.bank-status-pill--closed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.bank-status-pill--closed .bank-status-dot {
+  background-color: #ef4444;
+}
+
+.bank-badge-sub {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bank-badge-type {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.bank-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  line-height: 1.4;
+}
+
+.bank-card-title:hover {
+  color: #015b7e;
+}
+
+.bank-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.bank-meta-dot {
+  color: #d1d5db;
+}
+
+.bank-meta-highlight--primary {
+  color: #015b7e;
+  font-weight: 600;
+}
+
+.bank-meta-highlight--secondary {
+  color: #006780;
+  font-weight: 600;
+}
+
+.bank-meta-highlight--amber {
+  color: #b45309;
+  font-weight: 500;
+}
+
+.bank-meta-highlight--muted {
+  color: #6b7280;
+}
+
+.bank-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+@media (min-width: 768px) {
+  .bank-card-actions {
+    align-self: center;
+  }
+}
+
+/* Empty State */
+.bank-empty-state {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 40px 20px;
+  border: 1px dashed #cbd5e1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.bank-empty-icon {
+  font-size: 40px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.bank-empty-state h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.bank-empty-state p {
+  font-size: 13px;
+}
+
+/* Error State */
+.bank-error-state {
+  background-color: #fef2f2;
+  border-radius: 12px;
+  padding: 40px 20px;
+  border: 1px solid #fecaca;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #991b1b;
+}
+
+.bank-error-state h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #991b1b;
+  margin-bottom: 4px;
+}
+
+.bank-error-state p {
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+/* Modal Styles */
+.bank-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.bank-modal-box {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bank-modal-box--sm {
+  max-width: 440px;
+}
+
+.bank-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bank-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bank-modal-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: #015b7e;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bank-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.bank-modal-close {
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.bank-modal-close:hover {
+  color: #111827;
+}
+
+.bank-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bank-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.bank-form-input,
+.bank-form-select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.bank-form-input:focus,
+.bank-form-select:focus {
+  background-color: #ffffff;
+  border-color: #015b7e;
+  box-shadow: 0 0 0 2px rgba(1, 91, 126, 0.15);
+}
+
+.bank-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.bank-form-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.bank-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Delete Modal Specifics */
+.bank-del-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #fee2e2;
+  color: #ba1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bank-modal-desc {
+  font-size: 13px;
+  color: #4b5563;
+  margin-top: 6px;
+  line-height: 1.5;
+}

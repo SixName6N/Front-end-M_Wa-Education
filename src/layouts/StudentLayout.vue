@@ -32,13 +32,54 @@
             <IconBell size="18" />
           </button>
 
-          <div class="student-navbar__profile">
-            <div class="student-navbar__user-info">
-              <span class="student-navbar__user-name">{{ student.name }}</span>
-              <span class="student-navbar__user-class">{{ student.classRoom }} เลขที่ {{ student.number }}</span>
-            </div>
-            <div class="student-navbar__avatar">
-              <IconUser size="16" />
+          <!-- Profile with Dropdown Popup -->
+          <div class="student-navbar__profile" ref="profileRef">
+            <button
+              type="button"
+              class="student-navbar__profile-btn"
+              :class="{ 'student-navbar__profile-btn--active': isMenuOpen }"
+              aria-label="เมนูโปรไฟล์นักเรียน"
+              @click="isMenuOpen = !isMenuOpen"
+            >
+              <div class="student-navbar__user-info">
+                <span class="student-navbar__user-name">{{ displayName }}</span>
+                <span class="student-navbar__user-class">{{ studentClassInfo }}</span>
+              </div>
+              <div class="student-navbar__avatar">
+                <IconUser size="16" />
+              </div>
+              <span
+                class="material-symbols-outlined student-navbar__chevron"
+                :class="{ 'student-navbar__chevron--open': isMenuOpen }"
+              >
+                expand_more
+              </span>
+            </button>
+
+            <!-- Popup Menu -->
+            <div v-if="isMenuOpen" class="student-profile-dropdown">
+              <div class="student-profile-dropdown__header">
+                <div class="student-profile-dropdown__avatar">
+                  <IconUser size="18" />
+                </div>
+                <div class="student-profile-dropdown__info">
+                  <div class="student-profile-dropdown__name">{{ fullName }}</div>
+                  <div class="student-profile-dropdown__role">นักเรียน • {{ studentClassInfo }}</div>
+                </div>
+              </div>
+
+              <div class="student-profile-dropdown__divider"></div>
+
+              <div class="student-profile-dropdown__menu">
+                <button
+                  type="button"
+                  class="student-profile-dropdown__item student-profile-dropdown__item--danger"
+                  @click="handleLogout"
+                >
+                  <span class="material-symbols-outlined text-[18px]">logout</span>
+                  <span>ออกจากระบบ</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -65,12 +106,53 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 import IconExamHub from '@/components/icons/IconExamHub.vue'
 import IconBell from '@/components/icons/IconBell.vue'
 import IconUser from '@/components/icons/IconUser.vue'
 import { STUDENT_PROFILE } from '@/constants/exam.constants'
 
+const router = useRouter()
+const authStore = useAuthStore()
 const student = STUDENT_PROFILE
+
+// Profile dropdown state
+const profileRef = ref(null)
+const isMenuOpen = ref(false)
+
+const displayName = computed(() => {
+  return authStore.user?.fullName || authStore.user?.name || student.name
+})
+
+const fullName = computed(() => {
+  return authStore.user?.fullName || authStore.user?.name || student.name
+})
+
+const studentClassInfo = computed(() => {
+  return `${student.classRoom} เลขที่ ${student.number}`
+})
+
+const handleClickOutside = (e) => {
+  if (profileRef.value && !profileRef.value.contains(e.target)) {
+    isMenuOpen.value = false
+  }
+}
+
+const handleLogout = async () => {
+  isMenuOpen.value = false
+  await authStore.logout()
+  router.push('/login')
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped src="@/assets/styles/layouts/student-layout.css"></style>

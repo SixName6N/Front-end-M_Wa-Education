@@ -167,11 +167,7 @@ export const examService = {
    * ดึงรายวิชาทั้งหมดของครู
    */
   async listCourses() {
-    try {
-      const { data } = await apiClient.get('/courses')
-      return data?.courses ?? []
-    } catch {
-      return []
-    }
+    const { data } = await apiClient.get('/courses')
+    return data?.courses ?? []
   }
 }
