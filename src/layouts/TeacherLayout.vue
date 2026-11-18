@@ -14,7 +14,7 @@
 
           <nav class="teacher-navbar__nav">
             <router-link
-              to="/teacher/exams/create"
+              to="/teacher/exams"
               class="teacher-navbar__link"
               :class="{ 'teacher-navbar__link--active': isExamsActive }"
             >
