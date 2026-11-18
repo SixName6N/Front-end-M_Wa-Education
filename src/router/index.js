@@ -33,7 +33,7 @@ const router = createRouter({
       redirect: '/student/exams'
     },
     {
-      path: '/teacher/students',
+      path: '/teacher/studentsList',
       name: 'teacher-students',
       component: TeacherStudentManagementView,
       meta: {
@@ -66,7 +66,7 @@ const router = createRouter({
     },
     {
       path: '/teacher',
-      redirect: '/teacher/students'
+      redirect: '/teacher/studentsList'
     },
     {
       path: '/home',
