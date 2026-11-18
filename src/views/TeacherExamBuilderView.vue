@@ -5,7 +5,7 @@
       <section class="eb-top-bar">
         <!-- Breadcrumb -->
         <nav aria-label="Breadcrumb" class="eb-breadcrumb">
-          <router-link to="/teacher/exams/create" class="eb-breadcrumb__link">คลังข้อสอบ</router-link>
+          <router-link to="/teacher/exams" class="eb-breadcrumb__link">คลังข้อสอบ</router-link>
           <span class="material-symbols-outlined eb-breadcrumb__sep">chevron_right</span>
           <span class="eb-breadcrumb__link">วิชาวิทยาศาสตร์และเทคโนโลยี ม.3</span>
           <span class="material-symbols-outlined eb-breadcrumb__sep">chevron_right</span>
@@ -59,14 +59,59 @@
             <button
               type="button"
               class="eb-btn eb-btn--primary"
+              :disabled="!canPublish || publishing"
               @click="handlePublish"
             >
               <span class="material-symbols-outlined">publish</span>
-              <span>บันทึกและเผยแพร่</span>
+              <span>
+                {{ publishing ? 'กำลังบันทึก...' : publishedExamId ? 'เผยแพร่แล้ว' : 'บันทึกและเผยแพร่' }}
+              </span>
             </button>
           </div>
         </div>
       </section>
+
+      <!-- Page-level feedback: ผลการโหลดห้องเรียน / การเผยแพร่ -->
+      <AppStateNotice
+        v-if="classroomError"
+        variant="error"
+        :code="classroomErrorCode"
+        title="โหลดรายการห้องเรียนไม่สำเร็จ"
+        :message="classroomError"
+        retry-label="ลองใหม่"
+        @retry="loadClassrooms"
+      />
+      <AppStateNotice
+        v-else-if="noClassrooms"
+        variant="empty"
+        title="ยังไม่มีข้อมูลห้องเรียน"
+        message="สร้างห้องเรียนก่อน แล้วจึงมอบหมายข้อสอบให้ห้องเรียนได้"
+      />
+
+      <AppStateNotice
+        v-if="publishError"
+        variant="error"
+        :code="publishErrorCode"
+        title="เผยแพร่ชุดข้อสอบไม่สำเร็จ"
+        :message="publishError"
+        retry-label="ลองอีกครั้ง"
+        @retry="handlePublish"
+      />
+      <AppStateNotice
+        v-else-if="publishSuccess"
+        variant="success"
+        code="201"
+        title="เผยแพร่ชุดข้อสอบสำเร็จ"
+        :message="publishSuccessMessage"
+      >
+        <button
+          type="button"
+          class="eb-btn eb-btn--secondary"
+          @click="resetBuilder"
+        >
+          สร้างชุดใหม่
+        </button>
+      </AppStateNotice>
 
       <!-- MAIN SPLIT WORKSPACE GRID -->
       <div class="eb-workspace-grid">
@@ -572,7 +617,23 @@
                   <span class="material-symbols-outlined text-[18px]">groups</span>
                   <span>กลุ่มผู้มีสิทธิ์สอบ</span>
                 </div>
-                <span class="eb-side-row-val">{{ metadata.targetGroup }}</span>
+                <select
+                  v-if="classrooms.length > 0"
+                  v-model="selectedClassroomId"
+                  class="eb-side-select"
+                  :disabled="publishing || Boolean(publishedExamId)"
+                >
+                  <option
+                    v-for="room in roomOptions"
+                    :key="room.id"
+                    :value="room.id"
+                  >
+                    {{ room.label }}
+                  </option>
+                </select>
+                <span v-else class="eb-side-row-text">
+                  {{ loadingClassrooms ? 'กำลังโหลด...' : 'ยังไม่มีห้องเรียน' }}
+                </span>
               </div>
             </div>
           </section>
@@ -763,13 +824,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
+import AppStateNotice from '@/components/common/AppStateNotice.vue'
+import { studentService } from '@/services/studentService'
+import { examService } from '@/services/examService'
+import { toApiQuestion, validateExamDraft } from '@/utils/examBuilder'
 import {
   INITIAL_EXAM_METADATA,
   INITIAL_QUESTIONS,
   QUESTION_TYPES
 } from '@/constants/exam-builder.constants'
+
+const route = useRoute()
+const router = useRouter()
 
 const metadata = reactive({ ...INITIAL_EXAM_METADATA })
 const questions = ref(JSON.parse(JSON.stringify(INITIAL_QUESTIONS)))
@@ -779,6 +848,25 @@ const questionRefs = ref([])
 const builderRef = ref(null)
 const activeExplanations = reactive({})
 const newKeyInput = ref('')
+
+// --- ห้องเรียน / การเผยแพร่ (เชื่อม API จริง) -------------------------------
+const classrooms = ref([])
+const selectedClassroomId = ref('')
+const loadingClassrooms = ref(false)
+const classroomError = ref('')
+const classroomErrorStatus = ref(0)
+
+const publishing = ref(false)
+const publishError = ref('')
+const publishErrorStatus = ref(0)
+const publishSuccess = ref(null)
+const publishedExamId = ref('')
+
+// --- สถานะของชุดข้อสอบเดิม (กรณีเปิดมาจากคลังข้อสอบด้วย ?id=) ----------------
+let loadedExamStatus = ''
+let loadedQuestionIds = []
+let loadedAssignmentClassroomIds = []
+let loadedExamHasSubmissions = false
 
 const typeOptions = QUESTION_TYPES
 const thaiLabels = ['ก.', 'ข.', 'ค.', 'ง.', 'จ.', 'ฉ.']
@@ -832,6 +920,78 @@ const breakdownStats = computed(() => {
   })
 
   return res
+})
+
+// --- ตัวเลือกห้องเรียน / สถานะการเผยแพร่ (เชื่อม API จริง) ------------------
+const roomOptions = computed(() =>
+  classrooms.value.map((room) => ({
+    id: room.id,
+    label: `${room.name} (${room._count?.enrollments ?? 0} คน)`
+  }))
+)
+
+const noClassrooms = computed(
+  () => !loadingClassrooms.value && !classroomError.value && classrooms.value.length === 0
+)
+
+const classroomErrorCode = computed(() =>
+  classroomErrorStatus.value > 0 ? `HTTP ${classroomErrorStatus.value}` : 'NETWORK'
+)
+
+const publishErrorCode = computed(() =>
+  publishErrorStatus.value > 0 ? `HTTP ${publishErrorStatus.value}` : 'VALIDATION'
+)
+
+const canPublish = computed(
+  () =>
+    Boolean(metadata.title.trim()) &&
+    questions.value.length > 0 &&
+    Boolean(selectedClassroomId.value) &&
+    !publishedExamId.value
+)
+
+const publishSuccessMessage = computed(() => {
+  if (!publishSuccess.value) return ''
+  const { title, questions: count, points, id } = publishSuccess.value
+  return `“${title}” ถูกบันทึกแล้ว ${count} ข้อ รวม ${points} คะแนน • รหัสชุดข้อสอบ: ${id}`
+})
+
+function formatApiError(error, fallbackMessage) {
+  const message = error?.message || fallbackMessage
+  const issue = Array.isArray(error?.details) ? error.details[0]?.message : ''
+  return issue && !message.includes(issue) ? `${message}: ${issue}` : message
+}
+
+async function loadClassrooms() {
+  loadingClassrooms.value = true
+  classroomError.value = ''
+  classroomErrorStatus.value = 0
+
+  try {
+    const list = await studentService.listClassrooms()
+    classrooms.value = list
+
+    const stillExists = list.some((room) => room.id === selectedClassroomId.value)
+    if (!stillExists) {
+      selectedClassroomId.value = list[0]?.id ?? ''
+    }
+  } catch (error) {
+    classroomError.value = formatApiError(error, 'โหลดรายการห้องเรียนไม่สำเร็จ')
+    classroomErrorStatus.value = error?.status ?? 0
+    classrooms.value = []
+    selectedClassroomId.value = ''
+  } finally {
+    loadingClassrooms.value = false
+  }
+}
+
+/** เลือกห้องแล้วอัปเดตรหัสวิชา/กลุ่มผู้มีสิทธิ์สอบให้ตรงกับข้อมูลจริง */
+watch(selectedClassroomId, (roomId) => {
+  const room = classrooms.value.find((item) => item.id === roomId)
+  if (!room) return
+
+  metadata.targetGroup = `${room.name} (${room._count?.enrollments ?? 0} คน)`
+  if (room.course?.code) metadata.subjectCode = room.course.code
 })
 
 const moveQuestion = (index, direction) => {
@@ -984,12 +1144,225 @@ const scrollToBuilder = () => {
   if (builderRef.value) builderRef.value.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
+onMounted(async () => {
+  await loadClassrooms()
+
+  // Populate from query params if passed from Exam Bank
+  if (route.query.title) {
+    metadata.title = String(route.query.title)
+  }
+  if (route.query.course) {
+    metadata.subjectCode = String(route.query.course).split(' ')[0] || metadata.subjectCode
+  }
+  if (route.query.duration) {
+    metadata.durationMinutes = Number(route.query.duration) || metadata.durationMinutes
+  }
+  if (route.query.score) {
+    metadata.targetScore = Number(route.query.score) || metadata.targetScore
+  }
+
+  // If exam ID is provided, load real data from backend (exam bank → builder)
+  if (route.query.id && typeof route.query.id === 'string' && route.query.id.length > 10) {
+    try {
+      const remoteExam = await examService.getExamDetail(route.query.id)
+      if (remoteExam) {
+        loadedExamStatus = remoteExam.status
+        loadedQuestionIds = (remoteExam.questions ?? []).map((q) => q.id)
+        loadedAssignmentClassroomIds = (remoteExam.assignments ?? []).map((a) => a.classroomId)
+        loadedExamHasSubmissions = (remoteExam._count?.submissions ?? 0) > 0
+
+        metadata.title = remoteExam.title || metadata.title
+        metadata.durationMinutes = remoteExam.timeLimitMinutes || metadata.durationMinutes
+        if (remoteExam.course?.code) metadata.subjectCode = remoteExam.course.code
+
+        // ถ้าชุดนี้เคยมอบหมายห้องไว้แล้ว ให้เลือกห้องเดิมให้ตรง
+        const assignedRoom = (remoteExam.assignments ?? []).find((assignment) =>
+          classrooms.value.some((room) => room.id === assignment.classroomId)
+        )
+        if (assignedRoom) selectedClassroomId.value = assignedRoom.classroomId
+
+        if (remoteExam.questions && remoteExam.questions.length > 0) {
+          questions.value = remoteExam.questions.map((q) => ({
+            id: q.id,
+            type: q.type === 'MULTIPLE_CHOICE' ? 'choice' : q.type === 'SHORT_ANSWER' ? 'short_answer' : 'essay',
+            typeName: q.type === 'MULTIPLE_CHOICE' ? 'ปรนัย (Multiple Choice)' : q.type === 'SHORT_ANSWER' ? 'ตอบสั้น (Short Answer)' : 'เขียนบรรยาย (Essay with Rubric)',
+            score: q.points || 1,
+            prompt: q.prompt,
+            choices: q.choices?.map((c, choiceIdx) => ({
+              id: c.id,
+              label: c.label || thaiLabels[choiceIdx] || 'ก.',
+              text: c.text,
+              isCorrect: !!c.isCorrect
+            })),
+            acceptableKeys: q.referenceText ? [q.referenceText] : ['คำตอบ'],
+            caseInsensitive: true
+          }))
+        }
+      }
+    } catch (err) {
+      console.warn('Backend load note:', err.message)
+    }
+  }
+})
+
 const handleAutoSave = () => {
-  metadata.lastSavedText = 'บันทึกร่างอัตโนมัติเมื่อสักครู่'
+  if (!publishing.value && !publishedExamId.value) {
+    metadata.lastSavedText = 'มีการแก้ไขที่ยังไม่ถูกบันทึก'
+  }
 }
 
-const handlePublish = () => {
-  alert(`บันทึกและเผยแพร่ชุดข้อสอบ "${metadata.title}" เรียบร้อยแล้ว!\nจำนวนข้อสอบ: ${questions.value.length} ข้อ\nคะแนนรวม: ${currentTotalScore.value}/${metadata.targetScore} คะแนน`)
+function getSelectedRoom() {
+  return classrooms.value.find((room) => room.id === selectedClassroomId.value) ?? null
+}
+
+function examPayloadFromDraft(room) {
+  return {
+    title: metadata.title.trim(),
+    description: `รหัสวิชา ${metadata.subjectCode} • ${metadata.semester} • เป้าหมาย ${metadata.targetScore} คะแนน`,
+    courseId: room?.course?.id ?? null,
+    timeLimitMinutes: Number(metadata.durationMinutes) || null,
+    defaultDisplayMode: 'SINGLE_PAGE'
+  }
+}
+
+/** ชุดที่เปิดมาจากคลังข้อสอบด้วย ?id= มีอยู่แล้ว — ห้ามสร้างซ้ำ */
+function getQueryExamId() {
+  const id = route.query.id
+  return typeof id === 'string' && id.length > 10 ? id : ''
+}
+
+async function handlePublish() {
+  if (publishing.value || publishedExamId.value) return
+
+  publishError.value = ''
+  publishErrorStatus.value = 0
+  publishSuccess.value = null
+
+  const validationMessage = validateExamDraft({
+    title: metadata.title,
+    questions: questions.value,
+    classroomId: selectedClassroomId.value
+  })
+  if (validationMessage) {
+    publishError.value = validationMessage
+    publishErrorStatus.value = 0
+    return
+  }
+
+  const room = getSelectedRoom()
+  const queryExamId = getQueryExamId()
+  const reusingExisting = Boolean(queryExamId)
+  publishing.value = true
+  let createdExamId = null
+
+  try {
+    const examPayload = examPayloadFromDraft(room)
+
+    if (reusingExisting) {
+      // 1) ชุดนี้ถูกสร้างมาจากคลังข้อสอบแล้ว → อัปเดตข้อมูลเดิม
+      createdExamId = queryExamId
+      await examService.updateExam(createdExamId, examPayload)
+
+      // 2) sync คำถามเฉพาะชุดร่างที่ยังไม่มีผู้ส่งคำตอบ
+      //    (ชุดที่ publish แล้วจะไม่แตะคำถาม เพื่อไม่กระทบผู้ที่กำลังสอบ)
+      const canSyncQuestions = loadedExamStatus === 'DRAFT' && !loadedExamHasSubmissions
+      if (canSyncQuestions) {
+        const knownIds = new Set(loadedQuestionIds)
+        const keptIds = new Set()
+
+        for (let index = 0; index < questions.value.length; index += 1) {
+          const question = questions.value[index]
+          const payload = toApiQuestion(question, index)
+
+          if (typeof question.id === 'string' && knownIds.has(question.id)) {
+            await examService.updateQuestion(createdExamId, question.id, payload)
+            keptIds.add(question.id)
+          } else {
+            await examService.addQuestion(createdExamId, payload)
+          }
+        }
+
+        for (const questionId of loadedQuestionIds) {
+          if (!keptIds.has(questionId)) {
+            await examService.deleteQuestion(createdExamId, questionId)
+          }
+        }
+      }
+    } else {
+      // 1) สร้างข้อสอบใหม่ (DRAFT)
+      const exam = await examService.createExam(examPayload)
+      createdExamId = exam.id
+
+      // 2) เพิ่มข้อสอบทีละข้อตามลำดับ
+      for (let index = 0; index < questions.value.length; index += 1) {
+        await examService.addQuestion(
+          createdExamId,
+          toApiQuestion(questions.value[index], index)
+        )
+      }
+    }
+
+    // 3) มอบหมายให้ห้องเรียน (ข้ามถ้ามอบหมายห้องนี้ไว้แล้ว) แล้ว publish
+    if (!loadedAssignmentClassroomIds.includes(selectedClassroomId.value)) {
+      await examService.assignClassroom(createdExamId, {
+        classroomId: selectedClassroomId.value
+      })
+      loadedAssignmentClassroomIds.push(selectedClassroomId.value)
+    }
+    const published = await examService.publishExam(createdExamId)
+
+    publishedExamId.value = published.id
+    publishSuccess.value = {
+      id: published.id,
+      title: published.title,
+      questions: questions.value.length,
+      points: currentTotalScore.value
+    }
+    metadata.lastSavedText = 'เผยแพร่แล้ว'
+  } catch (error) {
+    publishError.value = formatApiError(error, 'เผยแพร่ชุดข้อสอบไม่สำเร็จ')
+    publishErrorStatus.value = error?.status ?? 0
+
+    // ลบเฉพาะร่างที่ flow นี้สร้างใหม่ — ห้ามลบชุดเดิมที่เปิดมาจากคลังข้อสอบ
+    if (createdExamId && !reusingExisting) {
+      try {
+        await examService.deleteExam(createdExamId)
+      } catch {
+        // ถ้าลบไม่ได้ ให้คง error เดิมไว้เพื่อให้ครูตรวจสอบ
+      }
+    }
+  } finally {
+    publishing.value = false
+  }
+}
+
+function resetBuilder() {
+  Object.assign(metadata, JSON.parse(JSON.stringify(INITIAL_EXAM_METADATA)))
+  metadata.lastSavedText = 'ยังไม่ได้บันทึก'
+  questions.value = JSON.parse(JSON.stringify(INITIAL_QUESTIONS))
+
+  publishError.value = ''
+  publishErrorStatus.value = 0
+  publishSuccess.value = null
+  publishedExamId.value = ''
+
+  loadedExamStatus = ''
+  loadedQuestionIds = []
+  loadedAssignmentClassroomIds = []
+  loadedExamHasSubmissions = false
+
+  resetNewForm()
+
+  const room = getSelectedRoom()
+  if (room) {
+    metadata.targetGroup = `${room.name} (${room._count?.enrollments ?? 0} คน)`
+    if (room.course?.code) metadata.subjectCode = room.course.code
+  }
+
+  // ตัด ?id= เดิมออก เพื่อไม่ให้กดเผยแพร่ซ้ำแล้วไปทับชุดที่เพิ่งเผยแพร่
+  if (route.query.id) router.replace({ path: '/teacher/exams/create' })
+
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const handleAdvancedSettings = () => {
@@ -1233,6 +1606,12 @@ const handleImportBank = () => {
 .eb-btn--ghost:hover {
   background-color: #f3f4f6;
   color: #111827;
+}
+
+.eb-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .eb-icon-btn {
@@ -2102,6 +2481,31 @@ const handleImportBank = () => {
   font-size: 12px;
   color: #4b5563;
   font-weight: 500;
+}
+
+.eb-side-select {
+  max-width: 55%;
+  height: 30px;
+  padding: 0 8px;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #015b7e;
+  outline: none;
+  cursor: pointer;
+}
+
+.eb-side-select:focus {
+  border-color: #015b7e;
+  box-shadow: 0 0 0 2px rgba(1, 91, 126, 0.15);
+}
+
+.eb-side-select:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
 .eb-toggle-pill {
