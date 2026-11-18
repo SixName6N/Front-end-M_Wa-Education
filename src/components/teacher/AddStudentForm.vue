@@ -99,7 +99,11 @@
         class="form-feedback form-feedback--error"
         role="alert"
       >
-        {{ localError || error }}
+        <span
+          v-if="!localError && errorCode"
+          class="form-feedback__code"
+        >{{ errorCode }}</span>
+        <span>{{ localError || error }}</span>
       </p>
       <div v-else-if="success" class="form-feedback form-feedback--success">
         <strong>เพิ่ม {{ success.name }} เรียบร้อยแล้ว</strong>
@@ -164,6 +168,10 @@ const props = defineProps({
     default: false
   },
   error: {
+    type: String,
+    default: ''
+  },
+  errorCode: {
     type: String,
     default: ''
   },

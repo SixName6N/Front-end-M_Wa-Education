@@ -54,6 +54,15 @@ const router = createRouter({
       path: '/about',
       name: 'about',
       component: () => import('@/views/AboutView.vue')
+    },
+    {
+      // ต้องอยู่ท้ายสุดเสมอ: ดักทุก path ที่ไม่ตรงกับ route ด้านบน
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
+      meta: {
+        title: 'ไม่พบหน้า (404) - ExamHub'
+      }
     }
   ],
   scrollBehavior() {

@@ -9,13 +9,22 @@
         :loading="loadingClassrooms"
       />
 
-      <!-- Page-level feedback -->
-      <p v-if="pageError" class="student-mgmt-alert" role="alert">
-        {{ pageError }}
-      </p>
-      <p v-else-if="noClassrooms" class="student-mgmt-alert student-mgmt-alert--info">
-        ยังไม่มีห้องเรียนในระบบ — สร้างห้องเรียนก่อนแล้วจึงเพิ่มนักเรียนได้
-      </p>
+      <!-- Page-level feedback: แสดงรหัส HTTP เมื่อโหลดไม่สำเร็จ -->
+      <AppStateNotice
+        v-if="pageError"
+        variant="error"
+        :code="pageErrorCode"
+        title="โหลดข้อมูลไม่สำเร็จ"
+        :message="pageError"
+        retry-label="ลองใหม่"
+        @retry="retryLoad"
+      />
+      <AppStateNotice
+        v-else-if="noClassrooms"
+        variant="empty"
+        title="ยังไม่มีข้อมูลห้องเรียน"
+        message="ยังไม่มีห้องเรียนในระบบ — สร้างห้องเรียนก่อนแล้วจึงเพิ่มนักเรียนได้"
+      />
 
       <!-- Main Workspace: Table (Left 8 cols) + Add Form (Right 4 cols) -->
       <div class="student-mgmt-grid">
@@ -40,6 +49,7 @@
             :submitting="savingStudent"
             :disabled="loadingClassrooms || !selectedRoomId"
             :error="formError"
+            :error-code="formErrorCode"
             :success="formSuccess"
             @add-student="handleAddStudent"
             @reset="clearFormFeedback"
@@ -57,6 +67,7 @@ import TeacherLayout from '@/layouts/TeacherLayout.vue'
 import TeacherHeaderStats from '@/components/teacher/TeacherHeaderStats.vue'
 import StudentRosterTable from '@/components/teacher/StudentRosterTable.vue'
 import AddStudentForm from '@/components/teacher/AddStudentForm.vue'
+import AppStateNotice from '@/components/common/AppStateNotice.vue'
 import { studentService } from '@/services/studentService'
 
 const classrooms = ref([])
@@ -69,8 +80,28 @@ const loadingStudents = ref(false)
 const savingStudent = ref(false)
 
 const pageError = ref('')
+const pageErrorStatus = ref(0)
 const formError = ref('')
+const formErrorStatus = ref(0)
 const formSuccess = ref(null)
+
+/** แสดงรหัส HTTP ที่ backend ตอบกลับ เพื่อให้ debug ได้ง่าย */
+const pageErrorCode = computed(() =>
+  pageErrorStatus.value > 0 ? `HTTP ${pageErrorStatus.value}` : 'NETWORK'
+)
+const formErrorCode = computed(() =>
+  formErrorStatus.value > 0 ? `HTTP ${formErrorStatus.value}` : ''
+)
+
+function setPageError(error, fallbackMessage) {
+  pageError.value = error?.message || fallbackMessage
+  pageErrorStatus.value = error?.status ?? 0
+}
+
+function clearPageError() {
+  pageError.value = ''
+  pageErrorStatus.value = 0
+}
 
 /** ตัวเลือกห้องเรียนใน dropdown — ใช้ชื่อ + รหัสวิชา + จำนวนนักเรียนจริง */
 const roomOptions = computed(() =>
@@ -124,7 +155,7 @@ function toRosterRow(student, index) {
 
 async function loadClassrooms({ silent = false } = {}) {
   if (!silent) loadingClassrooms.value = true
-  pageError.value = ''
+  clearPageError()
 
   try {
     const list = await studentService.listClassrooms()
@@ -135,7 +166,7 @@ async function loadClassrooms({ silent = false } = {}) {
       selectedRoomId.value = list[0]?.id ?? ''
     }
   } catch (error) {
-    pageError.value = error.message || 'โหลดรายการห้องเรียนไม่สำเร็จ'
+    setPageError(error, 'โหลดรายการห้องเรียนไม่สำเร็จ')
     classrooms.value = []
   } finally {
     if (!silent) loadingClassrooms.value = false
@@ -149,13 +180,13 @@ async function loadStudents() {
   }
 
   loadingStudents.value = true
-  pageError.value = ''
+  clearPageError()
 
   try {
     const list = await studentService.listClassroomStudents(selectedRoomId.value)
     students.value = list.map(toRosterRow)
   } catch (error) {
-    pageError.value = error.message || 'โหลดรายชื่อนักเรียนไม่สำเร็จ'
+    setPageError(error, 'โหลดรายชื่อนักเรียนไม่สำเร็จ')
     students.value = []
   } finally {
     loadingStudents.value = false
@@ -170,6 +201,7 @@ async function handleAddStudent(payload) {
 
   savingStudent.value = true
   formError.value = ''
+  formErrorStatus.value = 0
   formSuccess.value = null
 
   try {
@@ -188,6 +220,7 @@ async function handleAddStudent(payload) {
     await loadClassrooms({ silent: true })
   } catch (error) {
     formError.value = error.message || 'เพิ่มนักเรียนไม่สำเร็จ'
+    formErrorStatus.value = error.status ?? 0
   } finally {
     savingStudent.value = false
   }
@@ -202,6 +235,7 @@ async function handleRemoveStudent(student) {
   if (!confirmed) return
 
   pageError.value = ''
+  pageErrorStatus.value = 0
 
   try {
     await studentService.removeStudentFromClassroom(
@@ -211,12 +245,22 @@ async function handleRemoveStudent(student) {
     await loadStudents()
     await loadClassrooms({ silent: true })
   } catch (error) {
-    pageError.value = error.message || 'นำนักเรียนออกจากห้องไม่สำเร็จ'
+    setPageError(error, 'นำนักเรียนออกจากห้องไม่สำเร็จ')
+  }
+}
+
+/** ปุ่ม "ลองใหม่" บนกล่องแจ้ง error */
+function retryLoad() {
+  if (classrooms.value.length === 0) {
+    loadClassrooms()
+  } else {
+    loadStudents()
   }
 }
 
 function clearFormFeedback() {
   formError.value = ''
+  formErrorStatus.value = 0
   formSuccess.value = null
 }
 
