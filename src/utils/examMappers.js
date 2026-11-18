@@ -19,12 +19,14 @@ export function mapApiExamToView(item) {
     id: item.id,
     courseId: item.courseId || '',
     courseCode: item.course?.code || item.courseCode || '',
-    category: item.category || 'สอบวัดผล',
+    category: item.course?.title || item.course?.code || '',
+    description: item.description || '',
     status: mapped.status,
     statusText: mapped.statusText,
     title: item.title,
     questionsCount: item._count?.questions ?? item.questions?.length ?? 0,
-    maxScore: item.maxScore || 0,
+    totalPoints: item.totalPoints ?? (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
+    maxScore: item.totalPoints ?? (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
     duration: item.timeLimitMinutes || 60,
     scheduleInfo: item.updatedAt
       ? `แก้ไขล่าสุด ${new Date(item.updatedAt).toLocaleDateString('th-TH')}`

@@ -39,3 +39,30 @@ __screenshots__/
 # Vite
 *.timestamp-*-*.mjs
 *.md
+workflow_rules_before_coding.md
+
+# Dependencies & Packages
+node_modules/
+.dart_tool/
+.pub-cache/
+ios/Pods/
+
+# Build & Output Directories
+dist/
+build/
+.next/
+.nuxt/
+coverage/
+
+# Lock files & Logs (ไฟล์ขนาดใหญ่ที่ทำให้อ่านช้า)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+pubspec.lock
+*.log
+
+# System & IDE Files
+.git/
+.DS_Store
+.vscode/
+.idea/

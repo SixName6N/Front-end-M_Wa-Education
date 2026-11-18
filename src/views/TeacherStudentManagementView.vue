@@ -224,12 +224,26 @@ function handleImportCsv() {
   alert('เปิดหน้าต่างนำเข้าไฟล์ CSV รายชื่อนักเรียน')
 }
 
-function handleExportData() {
-  alert('กำลังส่งออกข้อมูลรายชื่อนักเรียนเป็นไฟล์ Excel/CSV')
+async function handleExportData() {
+  if (!selectedRoomId.value) {
+    alert('กรุณาเลือกห้องเรียนก่อนส่งออกข้อมูล')
+    return
+  }
+  const currentRoom = classrooms.value.find((r) => r.id === selectedRoomId.value)
+  const roomName = currentRoom?.name || 'classroom'
+  try {
+    await studentService.exportClassroomStudentsCsv(selectedRoomId.value, roomName)
+  } catch (error) {
+    alert(error.message || 'ส่งออกข้อมูลรายชื่อนักเรียนไม่สำเร็จ')
+  }
 }
 
-function handleDownloadTemplate() {
-  alert('กำลังดาวน์โหลดแม่แบบ CSV (student_roster_template.csv)')
+async function handleDownloadTemplate() {
+  try {
+    await studentService.downloadTemplate()
+  } catch (error) {
+    alert(error.message || 'ดาวน์โหลดแม่แบบไม่สำเร็จ')
+  }
 }
 
 watch(selectedRoomId, () => {

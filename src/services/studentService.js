@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient'
+import { apiClient, API_BASE_URL, getAccessToken } from './apiClient'
 
 /**
  * Service ฝั่งครูสำหรับจัดการห้องเรียนและรายชื่อนักเรียน
@@ -37,5 +37,41 @@ export const studentService = {
       `/classrooms/${classroomId}/students/${studentId}`
     )
     return data
+  },
+
+  /** ดาวน์โหลดแม่แบบ CSV สำหรับนำเข้ารายชื่อนักเรียน */
+  async downloadTemplate() {
+    const token = getAccessToken()
+    const response = await fetch(`${API_BASE_URL}/students/template`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+    if (!response.ok) throw new Error('ไม่สามารถดาวน์โหลดแม่แบบได้')
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'student_roster_template.csv'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+  },
+
+  /** ส่งออกรายชื่อนักเรียนในห้องเรียนเป็น CSV */
+  async exportClassroomStudentsCsv(classroomId, classroomName = 'classroom') {
+    const token = getAccessToken()
+    const response = await fetch(`${API_BASE_URL}/classrooms/${classroomId}/students/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+    if (!response.ok) throw new Error('ไม่สามารถส่งออกรายชื่อนักเรียนได้')
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${classroomName}-students.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
   }
 }

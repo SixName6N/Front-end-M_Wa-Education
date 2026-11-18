@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient'
+import { apiClient, API_BASE_URL, getAccessToken } from './apiClient'
 
 /**
  * Service ฝั่งครูสำหรับตรวจข้อสอบและจัดการผลคะแนน
@@ -53,5 +53,30 @@ export const gradingService = {
   async releaseExamResults(examId) {
     const { data } = await apiClient.post(`/grading/exams/${examId}/release`)
     return data
+  },
+
+  /**
+   * ส่งออกผลคะแนนทั้งชุดเป็น CSV
+   * @param {string} examId
+   * @param {Object} [params] - { status?: string, title?: string }
+   */
+  async exportExamResultsCsv(examId, { status, title = 'exam-results' } = {}) {
+    const query = new URLSearchParams()
+    if (status) query.set('status', status)
+    const qs = query.toString() ? `?${query.toString()}` : ''
+    const token = getAccessToken()
+    const response = await fetch(`${API_BASE_URL}/grading/exams/${examId}/export${qs}`, {
+      headers: (token ? { Authorization: `Bearer ${token}` } : {})
+    })
+    if (!response.ok) throw new Error('ไม่สามารถส่งออกผลคะแนนเป็น CSV ได้')
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${title}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
   }
 }

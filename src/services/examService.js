@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient'
+import { apiClient, API_BASE_URL, getAccessToken } from './apiClient'
 
 /**
  * Service ฝั่งครูสำหรับจัดการคลังข้อสอบและชุดข้อสอบ
@@ -169,5 +169,47 @@ export const examService = {
   async listCourses() {
     const { data } = await apiClient.get('/courses')
     return data?.courses ?? []
+  },
+
+  /**
+   * ดาวน์โหลดแม่แบบ CSV สำหรับนำเข้าข้อสอบ
+   */
+  async downloadQuestionTemplate() {
+    const token = getAccessToken()
+    const response = await fetch(`${API_BASE_URL}/exams/questions/import-template`, {
+      headers: (token ? { Authorization: `Bearer ${token}` } : {})
+    })
+    if (!response.ok) throw new Error('ไม่สามารถดาวน์โหลดแม่แบบข้อสอบได้')
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'question_import_template.csv'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+  },
+
+  /**
+   * นำเข้าข้อสอบจากไฟล์ CSV/.xlsx
+   * @param {string} examId
+   * @param {File} file
+   * @param {Object} [options] - { dryRun?: boolean }
+   */
+  async importQuestionsFromFile(examId, file, { dryRun = false } = {}) {
+    const token = getAccessToken()
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await fetch(`${API_BASE_URL}/exams/${examId}/questions/import?dryRun=${dryRun}`, {
+      method: 'POST',
+      headers: (token ? { Authorization: `Bearer ${token}` } : {}),
+      body: formData
+    })
+    const payload = await response.json()
+    if (!response.ok) {
+      throw new Error(payload?.error?.message || 'นำเข้าข้อสอบจากไฟล์ไม่สำเร็จ')
+    }
+    return payload
   }
 }

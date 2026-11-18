@@ -108,13 +108,13 @@
             <div class="bank-card-badges">
               <span
                 class="bank-status-pill"
-                :class="`bank-status-pill--${exam.status}`"
+                :class="`bank-status-pill--${exam.status || 'draft'}`"
               >
                 <span class="bank-status-dot"></span>
-                {{ exam.statusText }}
+                {{ exam.statusText || 'ฉบับร่าง' }}
               </span>
-              <span class="bank-badge-sub">{{ exam.courseCode }}</span>
-              <span class="bank-badge-type">{{ exam.category }}</span>
+              <span v-if="exam.courseCode" class="bank-badge-sub">{{ exam.courseCode }}</span>
+              <span v-if="exam.category || exam.courseCode" class="bank-badge-type">{{ exam.category || exam.courseCode }}</span>
             </div>
 
             <!-- Title -->
@@ -122,18 +122,18 @@
               class="bank-card-title"
               @click="goToEdit(exam)"
             >
-              {{ exam.title }}
+              {{ exam.title || 'ไม่มีชื่อชุดข้อสอบ' }}
             </h2>
 
             <!-- Meta details row -->
             <div class="bank-card-meta">
-              <span>{{ exam.questionsCount }} ข้อ</span>
+              <span>{{ exam.questionsCount ?? 0 }} ข้อ</span>
               <span class="bank-meta-dot">•</span>
-              <span>{{ exam.maxScore }} คะแนน</span>
+              <span>{{ exam.totalPoints ?? exam.maxScore ?? 0 }} คะแนน</span>
               <span class="bank-meta-dot">•</span>
-              <span>เวลา {{ exam.duration }} นาที</span>
-              <span class="bank-meta-dot">•</span>
-              <span :class="exam.highlightClass">{{ exam.scheduleInfo }}</span>
+              <span>เวลา {{ exam.duration || 60 }} นาที</span>
+              <span v-if="exam.scheduleInfo" class="bank-meta-dot">•</span>
+              <span v-if="exam.scheduleInfo" :class="exam.highlightClass">{{ exam.scheduleInfo }}</span>
             </div>
           </div>
 
@@ -247,38 +247,17 @@
             <div class="bank-form-row">
               <div class="bank-form-col">
                 <label class="bank-form-label">รายวิชา</label>
-                <select v-model="createForm.course" class="bank-form-select">
-                  <option value="ว23101 วิทยาศาสตร์ ม.3">ว23101 วิทยาศาสตร์ ม.3</option>
-                  <option value="ว22101 วิทยาศาสตร์กายภาพ ม.2">ว22101 วิทยาศาสตร์กายภาพ ม.2</option>
-                  <option value="ว30201 ฟิสิกส์เพิ่มเติม ม.4">ว30201 ฟิสิกส์เพิ่มเติม ม.4</option>
+                <select v-model="createForm.courseId" class="bank-form-select">
+                  <option :value="null">ไม่ระบุรายวิชา (ทั่วไป)</option>
+                  <option v-for="c in courses" :key="c.id" :value="c.id">
+                    {{ c.code ? `${c.code} ${c.title || c.name || ''}`.trim() : (c.title || c.name || c.id) }}
+                  </option>
                 </select>
               </div>
-              <div class="bank-form-col">
-                <label class="bank-form-label">ประเภทการสอบ</label>
-                <select v-model="createForm.category" class="bank-form-select">
-                  <option value="สอบเก็บคะแนนย่อย">สอบเก็บคะแนนย่อย</option>
-                  <option value="สอบกลางภาค">สอบกลางภาค</option>
-                  <option value="สอบปลายภาค">สอบปลายภาค</option>
-                  <option value="แบบฝึกหัดท้ายหน่วย">แบบฝึกหัดท้ายหน่วย</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="bank-form-row">
               <div class="bank-form-col">
                 <label class="bank-form-label">เวลาในการทำ (นาที)</label>
                 <input
                   v-model.number="createForm.duration"
-                  type="number"
-                  min="1"
-                  class="bank-form-input"
-                  required
-                />
-              </div>
-              <div class="bank-form-col">
-                <label class="bank-form-label">คะแนนรวม</label>
-                <input
-                  v-model.number="createForm.maxScore"
                   type="number"
                   min="1"
                   class="bank-form-input"
@@ -315,7 +294,7 @@
           <div>
             <h4 class="bank-modal-title">ยืนยันการลบชุดข้อสอบ?</h4>
             <p class="bank-modal-desc">
-              คุณกำลังจะลบชุดข้อสอบ <strong>"{{ examToDelete?.title }}"</strong> ข้อมูลคะแนนและประวัติการสอบของผู้เรียนที่เกี่ยวข้องอาจถูกระงับชั่วคราว
+              คุณกำลังจะลบชุดข้อสอบ <strong>"{{ examToDelete?.title || 'ชุดข้อสอบ' }}"</strong> ข้อมูลคะแนนและประวัติการสอบของผู้เรียนที่เกี่ยวข้องอาจถูกระงับชั่วคราว
             </p>
           </div>
           <div class="bank-modal-footer" style="padding-top: 8px;">
@@ -362,11 +341,12 @@ const examToDelete = ref(null)
 
 const createForm = reactive({
   title: '',
-  course: 'ว23101 วิทยาศาสตร์ ม.3',
-  category: 'สอบเก็บคะแนนย่อย',
-  duration: 60,
-  maxScore: 30
+  courseId: null,
+  duration: 60
 })
+
+// Courses list
+const courses = ref([])
 
 // Course filter tabs
 const courseTabs = ref([
@@ -393,34 +373,64 @@ const filteredExams = computed(() => {
       // Search query
       if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase().trim()
-        const matchesTitle = e.title.toLowerCase().includes(q)
-        const matchesCode = e.courseCode.toLowerCase().includes(q)
-        const matchesCat = e.category.toLowerCase().includes(q)
-        return matchesTitle || matchesCode || matchesCat
+        const matchesTitle = (e.title || '').toLowerCase().includes(q)
+        const matchesCode = (e.courseCode || '').toLowerCase().includes(q)
+        const matchesDesc = (e.description || '').toLowerCase().includes(q)
+        const matchesCat = (e.category || '').toLowerCase().includes(q)
+        return matchesTitle || matchesCode || matchesDesc || matchesCat
       }
       return true
     })
     .sort((a, b) => {
-      if (sortBy.value === 'score') return b.maxScore - a.maxScore
-      if (sortBy.value === 'date') return b.duration - a.duration
-      return b.updatedAt - a.updatedAt
+      if (sortBy.value === 'score') return (b.totalPoints ?? b.maxScore ?? 0) - (a.totalPoints ?? a.maxScore ?? 0)
+      if (sortBy.value === 'date') return (b.duration || 0) - (a.duration || 0)
+      return (b.updatedAt || 0) - (a.updatedAt || 0)
     })
 })
+
+const fetchCourses = async () => {
+  try {
+    const list = await examService.listCourses()
+    if (Array.isArray(list) && list.length > 0) {
+      courses.value = list
+    }
+  } catch (err) {
+    console.warn('fetchCourses error:', err)
+  }
+}
 
 const fetchExams = async () => {
   loading.value = true
   fetchError.value = ''
   try {
-    const list = await examService.listExams()
-    exams.value = list.map(mapApiExamToView)
+    const [list, courseList] = await Promise.all([
+      examService.listExams(),
+      examService.listCourses().catch((err) => {
+        console.warn('listCourses error:', err)
+        return []
+      })
+    ])
+    exams.value = (list || []).map(mapApiExamToView)
+    if (Array.isArray(courseList) && courseList.length > 0) {
+      courses.value = courseList
+    }
 
     // สร้างแท็บรายวิชาจากข้อมูลจริง
     const courseMap = new Map()
     for (const e of exams.value) {
       if (e.courseId && !courseMap.has(e.courseId)) {
-        courseMap.set(e.courseId, e.courseCode)
+        courseMap.set(e.courseId, e.courseCode || e.category || e.courseId)
       }
     }
+
+    if (courses.value.length === 0 && courseMap.size > 0) {
+      courses.value = Array.from(courseMap.entries()).map(([id, label]) => ({
+        id,
+        code: label,
+        title: label
+      }))
+    }
+
     courseTabs.value = [
       { id: 'all', label: `ทั้งหมด (${exams.value.length})` },
       ...Array.from(courseMap.entries()).map(([id, code]) => {
@@ -451,16 +461,23 @@ const resetFilters = () => {
 const goToEdit = (exam) => {
   router.push({
     path: '/teacher/exams/create',
-    query: { id: exam.id, title: exam.title }
+    query: {
+      id: exam.id,
+      title: exam.title || '',
+      ...(exam.courseCode ? { course: exam.courseCode } : {}),
+      duration: exam.duration || 60
+    }
   })
 }
 
-const handleMonitoring = (exam) => {
-  alert(`กำลังเปิดหน้าจอตรวจข้อสอบ & ติดตามผลสด: ${exam.title}`)
+const handleMonitoring = () => {
+  router.push('/teacher/grading')
 }
 
 const handleReview = (exam) => {
-  alert(`กำลังเปิดหน้าจอตรวจสอบเกณฑ์ข้อสอบ: ${exam.title}`)
+  if (exam?.id) {
+    goToEdit(exam)
+  }
 }
 
 const handleImportClick = () => {
@@ -468,30 +485,39 @@ const handleImportClick = () => {
 }
 
 // Create modal
-const openCreateModal = () => {
+const openCreateModal = async () => {
   createForm.title = ''
   createForm.duration = 60
-  createForm.maxScore = 30
+
+  if (courses.value.length === 0) {
+    await fetchCourses()
+  }
+
+  createForm.courseId = selectedCourse.value !== 'all' ? selectedCourse.value : (courses.value[0]?.id || null)
   showCreateModal.value = true
 }
 
 const submitCreateExam = async () => {
   let createdId = null
   try {
-    const res = await examService.createExam({
-      title: createForm.title,
-      timeLimitMinutes: createForm.duration
-    })
+    const payload = {
+      title: createForm.title.trim(),
+      timeLimitMinutes: Number(createForm.duration) || 60
+    }
+    if (createForm.courseId) payload.courseId = createForm.courseId
+
+    const res = await examService.createExam(payload)
     if (res?.id) createdId = res.id
     showCreateModal.value = false
+
+    const selectedCourseObj = courses.value.find((c) => c.id === createForm.courseId)
     router.push({
       path: '/teacher/exams/create',
       query: {
         id: createdId || undefined,
-        title: createForm.title,
-        course: createForm.course,
-        duration: createForm.duration,
-        score: createForm.maxScore
+        title: createForm.title.trim(),
+        ...(selectedCourseObj ? { course: selectedCourseObj.code || selectedCourseObj.title } : {}),
+        duration: createForm.duration
       }
     })
   } catch (err) {

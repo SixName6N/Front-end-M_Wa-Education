@@ -697,13 +697,17 @@ async function fetchGradingData() {
       return
     }
 
-    // Load submissions for each exam concurrently
+    // โหลด submissions ของแต่ละข้อสอบ และดึงรายละเอียดเฉพาะชุดที่มีการมอบหมายห้องเรียน
     const gradingPromises = examsList.map(async (exam) => {
       try {
-        const submissions = await gradingService.listExamSubmissions(exam.id)
-        return { exam, submissions }
+        const hasAssignments = (exam._count?.assignments ?? 0) > 0
+        const [submissions, detail] = await Promise.all([
+          gradingService.listExamSubmissions(exam.id),
+          hasAssignments ? examService.getExamDetail(exam.id).catch(() => null) : Promise.resolve(null)
+        ])
+        return { exam, submissions, detail }
       } catch {
-        return { exam, submissions: [] }
+        return { exam, submissions: [], detail: null }
       }
     })
 
@@ -712,12 +716,22 @@ async function fetchGradingData() {
     const pending = []
     const completed = []
 
-    for (const { exam, submissions } of results) {
-      const courseCode = exam.course?.code || exam.courseCode || 'รายวิชา'
+    for (const { exam, submissions, detail } of results) {
+      const courseCode = exam.course?.code || exam.courseCode || ''
       const title = exam.title
-      const category = exam.category || 'สอบวัดผล'
+      const category = exam.course?.title || exam.course?.code || ''
       const submittedCount = submissions.length
-      const totalStudents = exam._count?.assignments ? exam._count.assignments * 35 : (submittedCount || 0)
+
+      // คำนวณจำนวนนักเรียนจริงจากห้องเรียนที่มอบหมาย หากไม่มีห้องเรียนที่มอบหมายให้ใช้ยอดส่งจริง
+      let totalAssignedStudents = 0
+      if (detail?.assignments && Array.isArray(detail.assignments)) {
+        totalAssignedStudents = detail.assignments.reduce((sum, a) => {
+          return sum + (Number(a.classroom?._count?.enrollments) || 0)
+        }, 0)
+      }
+      const totalStudents = totalAssignedStudents > 0
+        ? Math.max(totalAssignedStudents, submittedCount)
+        : submittedCount
 
       const pendingSubmissions = submissions.filter((s) => s.needsGrading || s.status === 'SUBMITTED')
       const completedSubmissions = submissions.filter((s) => s.status === 'GRADED' || s.status === 'RELEASED')
