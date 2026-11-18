@@ -122,6 +122,25 @@
 
       <!-- Content State -->
       <template v-else>
+        <!-- Partial Load Warning Alert -->
+        <div
+          v-if="loadWarningMessage"
+          class="grading-warning-banner p-4 mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center justify-between"
+          role="alert"
+        >
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px] text-amber-600">warning</span>
+            <span>{{ loadWarningMessage }}</span>
+          </div>
+          <button
+            type="button"
+            class="px-3 py-1 text-xs font-semibold bg-amber-600 text-white rounded hover:bg-amber-700 transition"
+            @click="fetchGradingData"
+          >
+            ลองใหม่อีกครั้ง
+          </button>
+        </div>
+
         <!-- SECTION 1: Pending Grading (Action Required) -->
         <section
           v-if="shouldShowPendingSection"
@@ -160,9 +179,10 @@
               <div>
                 <h3 class="grading-card-title">{{ exam.title }}</h3>
                 <p class="grading-card-meta">
-                  <span>นักเรียนส่งข้อสอบแล้ว {{ exam.submittedCount }} จาก {{ exam.totalStudents }} คน</span>
+                  <span v-if="exam.loadFailed" class="text-amber-700 font-medium">⚠️ ไม่สามารถโหลดข้อมูลการส่งได้</span>
+                  <span v-else>นักเรียนส่งข้อสอบแล้ว {{ exam.submittedCount }} จาก {{ exam.totalStudents }} คน</span>
                   <span class="text-gray-300">•</span>
-                  <span class="grading-meta-tag">รอตรวจ {{ exam.pendingCount }} คน</span>
+                  <span class="grading-meta-tag">{{ exam.loadFailed ? 'เกิดข้อผิดพลาด' : `รอตรวจ ${exam.pendingCount} คน` }}</span>
                 </p>
               </div>
 
@@ -184,6 +204,16 @@
             <!-- Start Grading CTA Button -->
             <div>
               <button
+                v-if="exam.loadFailed"
+                type="button"
+                class="px-3 py-2 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition flex items-center gap-1 shadow-sm"
+                @click="fetchGradingData"
+              >
+                <span class="material-symbols-outlined text-[16px]">sync</span>
+                <span>ลองโหลดใหม่</span>
+              </button>
+              <button
+                v-else
                 type="button"
                 class="grading-cta-btn"
                 @click="startGrading(exam)"
@@ -669,6 +699,7 @@ const pendingExams = ref([])
 const completedExams = ref([])
 const loading = ref(false)
 const fetchError = ref('')
+const loadWarningMessage = ref('')
 
 // Real Grading Flow States
 const activeGradingExam = ref(null)
@@ -688,6 +719,7 @@ const showHelpModal = ref(false)
 async function fetchGradingData() {
   loading.value = true
   fetchError.value = ''
+  loadWarningMessage.value = ''
   pendingExams.value = []
   completedExams.value = []
 
@@ -705,18 +737,32 @@ async function fetchGradingData() {
           gradingService.listExamSubmissions(exam.id),
           hasAssignments ? examService.getExamDetail(exam.id).catch(() => null) : Promise.resolve(null)
         ])
-        return { exam, submissions, detail }
-      } catch {
-        return { exam, submissions: [], detail: null }
+        return { exam, submissions, detail, loadFailed: false }
+      } catch (err) {
+        console.error(`โหลดข้อมูลการส่งของชุดข้อสอบ "${exam.title}" (ID: ${exam.id}) ล้มเหลว:`, err)
+        return {
+          exam,
+          submissions: [],
+          detail: null,
+          loadFailed: true,
+          errorMessage: err.message || 'โหลดข้อมูลล้มเหลว'
+        }
       }
     })
 
     const results = await Promise.all(gradingPromises)
 
+    // ตรวจสอบว่ามีชุดที่โหลดไม่สำเร็จหรือไม่ เพื่อแจ้งเตือนบนหน้าเว็บ
+    const failedExams = results.filter((r) => r.loadFailed)
+    if (failedExams.length > 0) {
+      const names = failedExams.map((f) => `"${f.exam.title}"`).join(', ')
+      loadWarningMessage.value = `โหลดข้อมูลการส่งของชุดข้อสอบไม่สำเร็จ: ${names} (กรุณาลองใหม่อีกครั้ง)`
+    }
+
     const pending = []
     const completed = []
 
-    for (const { exam, submissions, detail } of results) {
+    for (const { exam, submissions, detail, loadFailed, errorMessage } of results) {
       const courseCode = exam.course?.code || exam.courseCode || ''
       const title = exam.title
       const category = exam.course?.title || exam.course?.code || ''
@@ -736,7 +782,23 @@ async function fetchGradingData() {
       const pendingSubmissions = submissions.filter((s) => s.needsGrading || s.status === 'SUBMITTED')
       const completedSubmissions = submissions.filter((s) => s.status === 'GRADED' || s.status === 'RELEASED')
 
-      if (pendingSubmissions.length > 0 || (exam.status === 'CLOSED' && submittedCount > 0 && pendingSubmissions.length > 0)) {
+      if (loadFailed) {
+        // หากโหลดไม่สำเร็จ ให้แสดงการ์ดพร้อมสถานะแจ้งเตือนข้อผิดพลาดชัดเจน (ไม่หลอกตาว่าส่งแล้ว 0 คน)
+        pending.push({
+          id: exam.id,
+          courseCode,
+          category,
+          title,
+          submittedCount: 0,
+          totalStudents: 0,
+          pendingCount: 0,
+          autoGradedPercent: 0,
+          hasEssay: false,
+          submissions: [],
+          loadFailed: true,
+          errorMessage
+        })
+      } else if (pendingSubmissions.length > 0 || (exam.status === 'CLOSED' && submittedCount > 0 && pendingSubmissions.length > 0)) {
         pending.push({
           id: exam.id,
           courseCode,
@@ -747,7 +809,8 @@ async function fetchGradingData() {
           pendingCount: pendingSubmissions.length,
           autoGradedPercent: submittedCount > 0 ? Math.round(((submittedCount - pendingSubmissions.length) / submittedCount) * 100) : 100,
           hasEssay: true,
-          submissions
+          submissions,
+          loadFailed: false
         })
       } else if (completedSubmissions.length > 0) {
         const totalScoreSum = completedSubmissions.reduce((sum, s) => sum + (Number(s.totalScore) || 0), 0)
@@ -762,7 +825,8 @@ async function fetchGradingData() {
           totalStudents: submittedCount,
           avgScore: `${avgScore}`,
           summaryText: `ตรวจคำตอบครบถ้วน ${completedSubmissions.length} คน • คะแนนเฉลี่ย ${avgScore} คะแนน`,
-          submissions
+          submissions,
+          loadFailed: false
         })
       }
     }
