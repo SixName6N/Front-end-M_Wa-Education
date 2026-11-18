@@ -7,7 +7,7 @@
  * access/refresh token เก็บใน localStorage เพื่อให้ session อยู่ต่อหลัง refresh หน้า
  */
 
-const API_BASE_URL = (
+export const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 ).replace(/\/+$/, '')
 

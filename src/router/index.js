@@ -33,12 +33,16 @@ const router = createRouter({
       redirect: '/student/exams'
     },
     {
-      path: '/teacher/studentsList',
+      path: '/teacher/students',
       name: 'teacher-students',
       component: TeacherStudentManagementView,
       meta: {
         title: 'จัดการรายชื่อนักเรียน (Student Management) - ExamHub'
       }
+    },
+    {
+      path: '/teacher/studentsList',
+      redirect: '/teacher/students'
     },
     {
       path: '/teacher/exams/create',
@@ -57,6 +61,14 @@ const router = createRouter({
       }
     },
     {
+      path: '/teacher/grading',
+      name: 'teacher-grading',
+      component: () => import('@/views/TeacherGradingView.vue'),
+      meta: {
+        title: 'ตรวจข้อสอบ (Grading & Assessment) - ExamHub'
+      }
+    },
+    {
       path: '/teacher/exam-bank',
       redirect: '/teacher/exams'
     },
@@ -66,7 +78,7 @@ const router = createRouter({
     },
     {
       path: '/teacher',
-      redirect: '/teacher/studentsList'
+      redirect: '/teacher/students'
     },
     {
       path: '/home',
