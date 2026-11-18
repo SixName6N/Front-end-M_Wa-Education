@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/LoginView.vue'
 import StudentExamListView from '@/views/StudentExamListView.vue'
 import TeacherStudentManagementView from '@/views/TeacherStudentManagementView.vue'
+import TeacherExamBuilderView from '@/views/TeacherExamBuilderView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -37,6 +38,22 @@ const router = createRouter({
       meta: {
         title: 'จัดการรายชื่อนักเรียน (Student Management) - ExamHub'
       }
+    },
+    {
+      path: '/teacher/exams/create',
+      name: 'teacher-exam-create',
+      component: TeacherExamBuilderView,
+      meta: {
+        title: 'สร้างและเพิ่มข้อสอบ (Teacher Exam Builder) - ExamHub'
+      }
+    },
+    {
+      path: '/teacher/exams',
+      redirect: '/teacher/exams/create'
+    },
+    {
+      path: '/teacher/exam-builder',
+      redirect: '/teacher/exams/create'
     },
     {
       path: '/teacher',
