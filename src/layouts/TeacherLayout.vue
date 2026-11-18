@@ -13,11 +13,18 @@
           </router-link>
 
           <nav class="teacher-navbar__nav">
-            <a href="#" class="teacher-navbar__link" @click.prevent>คลังข้อสอบ</a>
+            <router-link
+              to="/teacher/exams/create"
+              class="teacher-navbar__link"
+              :class="{ 'teacher-navbar__link--active': isExamsActive }"
+            >
+              คลังข้อสอบ
+            </router-link>
             <a href="#" class="teacher-navbar__link" @click.prevent>ตรวจข้อสอบ</a>
             <router-link
               to="/teacher/students"
-              class="teacher-navbar__link teacher-navbar__link--active"
+              class="teacher-navbar__link"
+              :class="{ 'teacher-navbar__link--active': isStudentsActive }"
             >
               รายชื่อนักเรียน
             </router-link>
@@ -67,10 +74,30 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import IconExamHub from '@/components/icons/IconExamHub.vue'
 import { TEACHER_PROFILE } from '@/constants/teacher.constants'
 
+const props = defineProps({
+  activeTab: {
+    type: String,
+    default: ''
+  }
+})
+
+const route = useRoute()
 const teacher = TEACHER_PROFILE
+
+const isExamsActive = computed(() => {
+  return props.activeTab === 'exams' || (route && route.path && route.path.startsWith('/teacher/exam'))
+})
+
+const isStudentsActive = computed(() => {
+  if (props.activeTab === 'students') return true
+  if (props.activeTab === 'exams') return false
+  return !route || !route.path || route.path.startsWith('/teacher/student') || route.path === '/teacher'
+})
 </script>
 
 <style scoped src="@/assets/styles/layouts/teacher-layout.css"></style>
