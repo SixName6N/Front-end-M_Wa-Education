@@ -8,38 +8,22 @@
 
     <!-- Form -->
     <form class="add-student-form" @submit.prevent="handleSubmit">
-      <!-- Row 1: Seat & ID -->
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label" for="student-seat">
-            เลขที่ <span class="form-required">*</span>
-          </label>
-          <input
-            id="student-seat"
-            v-model="form.seat"
-            type="number"
-            class="form-input"
-            placeholder="เช่น 36"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="student-id">
-            รหัสนักเรียน <span class="form-required">*</span>
-          </label>
-          <input
-            id="student-id"
-            v-model="form.id"
-            type="text"
-            class="form-input"
-            placeholder="เช่น 30136"
-            required
-          />
-        </div>
+      <!-- Student code -->
+      <div class="form-group">
+        <label class="form-label" for="student-id">
+          รหัสนักเรียน <span class="form-required">*</span>
+        </label>
+        <input
+          id="student-id"
+          v-model="form.studentCode"
+          type="text"
+          class="form-input"
+          placeholder="เช่น 30136"
+          required
+        />
       </div>
 
-      <!-- Row 2: Prefix & Full Name -->
+      <!-- Prefix & Full name -->
       <div class="form-grid-prefix-name">
         <div class="form-group">
           <label class="form-label" for="student-prefix">คำนำหน้า</label>
@@ -70,40 +54,78 @@
         </div>
       </div>
 
-      <!-- Row 3: Email -->
+      <!-- Email (ใช้เป็นบัญชีเข้าสู่ระบบ) -->
       <div class="form-group">
-        <label class="form-label" for="student-email">อีเมลนักเรียน</label>
+        <label class="form-label" for="student-email">
+          อีเมลนักเรียน <span class="form-required">*</span>
+        </label>
         <input
           id="student-email"
           v-model="form.email"
           type="email"
           class="form-input"
           placeholder="student@school.ac.th"
+          required
         />
+        <span class="form-hint">ใช้เป็นชื่อผู้ใช้สำหรับเข้าสู่ระบบของนักเรียน</span>
       </div>
 
-      <!-- Row 4: Room -->
+      <!-- Classroom -->
       <div class="form-group">
         <label class="form-label" for="student-room">ห้องเรียน</label>
         <select
           id="student-room"
-          v-model="form.room"
           class="form-select"
+          :value="classroomId"
+          :disabled="disabled || classrooms.length === 0"
+          @change="$emit('update:classroomId', $event.target.value)"
         >
-          <option value="m3-1">มัธยมศึกษาปีที่ 3/1 (ห้องปัจจุบัน)</option>
-          <option value="m3-2">มัธยมศึกษาปีที่ 3/2</option>
-          <option value="m3-3">มัธยมศึกษาปีที่ 3/3</option>
+          <option v-if="classrooms.length === 0" value="">
+            ยังไม่มีห้องเรียน
+          </option>
+          <option
+            v-for="room in classrooms"
+            :key="room.id"
+            :value="room.id"
+          >
+            {{ room.name }}
+          </option>
         </select>
+      </div>
+
+      <!-- Feedback -->
+      <p
+        v-if="localError || error"
+        class="form-feedback form-feedback--error"
+        role="alert"
+      >
+        {{ localError || error }}
+      </p>
+      <div v-else-if="success" class="form-feedback form-feedback--success">
+        <strong>เพิ่ม {{ success.name }} เรียบร้อยแล้ว</strong>
+        <template v-if="success.temporaryPassword">
+          <span>รหัสผ่านชั่วคราว:</span>
+          <code class="form-credential">{{ success.temporaryPassword }}</code>
+          <span class="form-hint">แจ้งรหัสนี้ให้นักเรียนเพื่อใช้เข้าสู่ระบบครั้งแรก</span>
+        </template>
+        <span v-else class="form-hint">
+          บัญชีนี้มีอยู่แล้ว ระบบผูกเข้าห้องเรียนให้เรียบร้อย
+        </span>
       </div>
 
       <!-- Actions -->
       <div class="form-actions">
-        <button type="submit" class="form-btn-submit">
-          บันทึกรายชื่อ
+        <button
+          type="submit"
+          class="form-btn-submit"
+          :disabled="submitting || disabled || classrooms.length === 0"
+        >
+          {{ submitting ? 'กำลังบันทึก...' : 'บันทึกเข้าระบบ' }}
         </button>
         <button
           type="button"
           class="form-btn-reset"
+          :disabled="submitting"
           @click="handleReset"
         >
           ล้างข้อมูล
@@ -122,44 +144,97 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref, watch } from 'vue'
 
-const emit = defineEmits(['add-student', 'download-template'])
-
-const form = reactive({
-  seat: '',
-  id: '',
-  prefix: 'ด.ช.',
-  name: '',
-  email: '',
-  room: 'm3-1'
+const props = defineProps({
+  classrooms: {
+    type: Array,
+    default: () => []
+  },
+  classroomId: {
+    type: String,
+    default: ''
+  },
+  submitting: {
+    type: Boolean,
+    default: false
+  },
+  disabled: {
+    type: Boolean,
+    default: false
+  },
+  error: {
+    type: String,
+    default: ''
+  },
+  success: {
+    type: Object,
+    default: null
+  }
 })
 
+const emit = defineEmits(['add-student', 'download-template', 'update:classroomId', 'reset'])
+
+const form = reactive({
+  studentCode: '',
+  prefix: 'ด.ช.',
+  name: '',
+  email: ''
+})
+
+const localError = ref('')
+
 const handleSubmit = () => {
-  if (!form.seat || !form.id || !form.name) return
+  localError.value = ''
+
+  const studentCode = form.studentCode.trim()
+  const name = form.name.trim()
+  const email = form.email.trim()
+
+  if (!studentCode) {
+    localError.value = 'กรุณากรอกรหัสนักเรียน'
+    return
+  }
+  if (!name) {
+    localError.value = 'กรุณากรอกชื่อ - นามสกุล'
+    return
+  }
+  if (!email) {
+    localError.value = 'กรุณากรอกอีเมลนักเรียน'
+    return
+  }
+  if (!props.classroomId) {
+    localError.value = 'กรุณาเลือกห้องเรียนก่อน'
+    return
+  }
+
   emit('add-student', {
-    seat: Number(form.seat),
-    id: form.id,
-    name: `${form.prefix} ${form.name}`,
-    email: form.email,
-    room: form.room,
-    status: 'unsubmitted',
-    statusText: 'ยังไม่ส่งข้อสอบ',
-    score: null,
-    maxScore: 30,
-    actionText: 'เตือนส่งงาน'
+    studentCode,
+    fullName: `${form.prefix} ${name}`.trim(),
+    email
   })
-  handleReset()
 }
 
-const handleReset = () => {
-  form.seat = ''
-  form.id = ''
+const resetFields = () => {
+  form.studentCode = ''
   form.prefix = 'ด.ช.'
   form.name = ''
   form.email = ''
-  form.room = 'm3-1'
 }
+
+const handleReset = () => {
+  localError.value = ''
+  resetFields()
+  emit('reset')
+}
+
+// เพิ่มสำเร็จ → ล้างช่องกรอก แต่ยังแสดงกล่องข้อความความสำเร็จไว้
+watch(
+  () => props.success,
+  (value) => {
+    if (value) resetFields()
+  }
+)
 </script>
 
 <style scoped src="@/assets/styles/components/add-student-form.css"></style>

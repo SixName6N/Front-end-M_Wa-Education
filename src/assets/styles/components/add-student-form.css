@@ -107,8 +107,14 @@
   transition: background-color var(--transition-fast);
 }
 
-.form-btn-submit:hover {
+.form-btn-submit:hover:not(:disabled) {
   background-color: #00425d;
+}
+
+.form-btn-submit:disabled {
+  background-color: #9db8c4;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .form-btn-reset {
@@ -124,8 +130,69 @@
   transition: all var(--transition-fast);
 }
 
-.form-btn-reset:hover {
+.form-btn-reset:hover:not(:disabled) {
   background-color: #f9fafb;
+}
+
+.form-btn-reset:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.form-input:disabled,
+.form-select:disabled {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Helper text under a field */
+.form-hint {
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Inline feedback box (error / success) */
+.form-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.form-feedback--error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.form-feedback--success {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.form-feedback--success strong {
+  font-weight: 600;
+}
+
+/* Temporary password shown once after creating an account */
+.form-credential {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 4px 10px;
+  background-color: #ffffff;
+  border: 1px dashed #6ee7b7;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: #065f46;
+  letter-spacing: 0.03em;
 }
 
 .add-student-footer {

@@ -10,7 +10,7 @@
           :value="searchQuery"
           type="text"
           class="roster-search__input"
-          placeholder="ค้นหาชื่อ, รหัสนักเรียน หรือเลขที่..."
+          placeholder="ค้นหาชื่อ, รหัสนักเรียน, อีเมล หรือเลขที่..."
           @input="$emit('update:searchQuery', $event.target.value)"
         />
       </div>
@@ -53,115 +53,90 @@
               <th style="width: 60px;">เลขที่</th>
               <th style="width: 90px;">รหัส</th>
               <th>ชื่อ - นามสกุล</th>
-              <th>สถานะการสอบ</th>
-              <th style="text-align: center;">คะแนน</th>
+              <th>อีเมล</th>
+              <th>สถานะบัญชี</th>
               <th style="text-align: right;">จัดการ</th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="student in students"
-              :key="student.id"
-            >
-              <!-- Checkbox -->
-              <td style="text-align: center;">
-                <input
-                  v-model="selectedStudents"
-                  type="checkbox"
-                  :value="student.id"
-                  class="roster-table__checkbox"
-                />
-              </td>
+            <tr v-if="loading">
+              <td colspan="7" class="roster-table__empty">กำลังโหลดรายชื่อ...</td>
+            </tr>
 
-              <!-- Seat -->
-              <td class="roster-table__seat">{{ student.seat }}</td>
-
-              <!-- ID -->
-              <td class="roster-table__id">{{ student.id }}</td>
-
-              <!-- Name -->
-              <td class="roster-table__name">{{ student.name }}</td>
-
-              <!-- Status Badge -->
-              <td>
-                <span
-                  class="roster-status-badge"
-                  :class="`roster-status-badge--${student.status}`"
-                >
-                  <span class="roster-status-dot"></span>
-                  <span>{{ student.statusText }}</span>
-                </span>
-              </td>
-
-              <!-- Score -->
-              <td class="roster-table__score">
-                <template v-if="student.score !== null">
-                  {{ student.score }}
-                  <span class="roster-table__score-max">/ {{ student.maxScore }}</span>
-                </template>
-                <template v-else-if="student.status === 'pending'">
-                  <span class="roster-table__score--empty">-- / {{ student.maxScore }}</span>
-                </template>
-                <template v-else>
-                  <span class="roster-table__score--empty">--</span>
-                </template>
-              </td>
-
-              <!-- Actions -->
-              <td class="roster-table__manage">
-                <button
-                  type="button"
-                  class="roster-btn-link"
-                  :class="{
-                    'roster-btn-link--primary': student.status === 'graded',
-                    'roster-btn-link--teal': student.status === 'pending',
-                    'roster-btn-link--muted': student.status === 'unsubmitted'
-                  }"
-                  @click="$emit('manage-student', student)"
-                >
-                  {{ student.actionText }}
-                </button>
+            <tr v-else-if="students.length === 0">
+              <td colspan="7" class="roster-table__empty">
+                ยังไม่มีนักเรียนในห้องนี้ — เพิ่มได้จากฟอร์มด้านขวา
               </td>
             </tr>
+
+            <template v-else>
+              <tr
+                v-for="student in students"
+                :key="student.id"
+              >
+                <!-- Checkbox -->
+                <td style="text-align: center;">
+                  <input
+                    v-model="selectedStudents"
+                    type="checkbox"
+                    :value="student.id"
+                    class="roster-table__checkbox"
+                  />
+                </td>
+
+                <!-- Seat -->
+                <td class="roster-table__seat">{{ student.seat }}</td>
+
+                <!-- Student code -->
+                <td class="roster-table__id">{{ student.studentCode || '—' }}</td>
+
+                <!-- Name -->
+                <td class="roster-table__name">{{ student.name }}</td>
+
+                <!-- Email -->
+                <td class="roster-table__email">{{ student.email || '—' }}</td>
+
+                <!-- Account status -->
+                <td>
+                  <span
+                    class="roster-status-badge"
+                    :class="`roster-status-badge--${student.status}`"
+                  >
+                    <span class="roster-status-dot"></span>
+                    <span>{{ student.statusText }}</span>
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="roster-table__manage">
+                  <button
+                    type="button"
+                    class="roster-btn-link roster-btn-link--danger"
+                    @click="$emit('manage-student', student)"
+                  >
+                    {{ student.actionText }}
+                  </button>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
 
-      <!-- Pagination Footer -->
+      <!-- Footer -->
       <div class="roster-pagination">
         <span>แสดง {{ students.length }} จาก {{ totalCount }} รายการ</span>
-        <div class="roster-pagination__controls">
-          <button
-            type="button"
-            class="roster-pagination__btn"
-            disabled
-            aria-label="Previous"
-          >
-            <IconChevronLeft size="14" />
-          </button>
-          <button type="button" class="roster-pagination__btn roster-pagination__btn--active">1</button>
-          <button type="button" class="roster-pagination__btn">2</button>
-          <button type="button" class="roster-pagination__btn">3</button>
-          <button
-            type="button"
-            class="roster-pagination__btn"
-            aria-label="Next"
-          >
-            <IconChevronRight size="14" />
-          </button>
-        </div>
+        <span class="roster-pagination__page">หน้า 1 / 1</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import IconSearch from '@/components/icons/IconSearch.vue'
 import IconUpload from '@/components/icons/IconUpload.vue'
 import IconDownload from '@/components/icons/IconDownload.vue'
-import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
-import IconChevronRight from '@/components/icons/IconChevronRight.vue'
 
 const props = defineProps({
   students: {
@@ -174,7 +149,11 @@ const props = defineProps({
   },
   totalCount: {
     type: Number,
-    default: 35
+    default: 0
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -201,6 +180,15 @@ const toggleSelectAll = (e) => {
     selectedStudents.value = []
   }
 }
+
+// เปลี่ยนห้อง/รีโหลดรายชื่อ → ตัด id ที่ไม่มีอยู่แล้วออกจากที่เลือกไว้
+watch(
+  () => props.students,
+  (list) => {
+    const ids = new Set(list.map((student) => student.id))
+    selectedStudents.value = selectedStudents.value.filter((id) => ids.has(id))
+  }
+)
 </script>
 
 <style scoped src="@/assets/styles/components/student-roster-table.css"></style>
