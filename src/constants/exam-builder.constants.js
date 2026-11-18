@@ -7,7 +7,7 @@ export const INITIAL_EXAM_METADATA = {
   targetGroup: 'ม.3/1 (35 คน)',
   dueDate: '25 ก.ย. 68 (16:30 น.)',
   shuffleQuestions: true,
-  lastSavedText: 'บันทึกร่างอัตโนมัติ 1 นาทีที่แล้ว'
+  lastSavedText: 'ยังไม่ได้บันทึก'
 }
 
 export const INITIAL_QUESTIONS = [
