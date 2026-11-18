@@ -5,7 +5,7 @@
       <div class="teacher-navbar__inner">
         <!-- Left: Logo & Navigation Menu -->
         <div class="teacher-navbar__left">
-          <router-link to="/teacher/students" class="teacher-navbar__brand">
+          <router-link to="/teacher/exams/" class="teacher-navbar__brand">
             <div class="teacher-navbar__logo">
               <IconExamHub size="18" />
             </div>
@@ -14,15 +14,21 @@
 
           <nav class="teacher-navbar__nav">
             <router-link
-              to="/teacher/exams/create"
+              to="/teacher/exams/"
               class="teacher-navbar__link"
               :class="{ 'teacher-navbar__link--active': isExamsActive }"
             >
               คลังข้อสอบ
             </router-link>
-            <a href="#" class="teacher-navbar__link" @click.prevent>ตรวจข้อสอบ</a>
             <router-link
-              to="/teacher/students"
+              to="/teacher/exams/?filter=review"
+              class="teacher-navbar__link"
+              :class="{ 'teacher-navbar__link--active': isGradingActive }"
+            >
+              ตรวจข้อสอบ
+            </router-link>
+            <router-link
+              to="/teacher/studentsList"
               class="teacher-navbar__link"
               :class="{ 'teacher-navbar__link--active': isStudentsActive }"
             >
@@ -35,8 +41,7 @@
         <div class="teacher-navbar__right">
           <!-- Role Switcher -->
           <div class="teacher-navbar__role-switch">
-            <span class="teacher-navbar__role-btn teacher-navbar__role-btn--active">ครูผู้สอน</span>
-            <router-link to="/student/exams" class="teacher-navbar__role-btn">นักเรียน</router-link>
+            <router-link to="/teacher/exams/" class="teacher-navbar__role-btn teacher-navbar__role-btn--active">ครูผู้สอน</router-link>
           </div>
 
           <div class="teacher-navbar__divider"></div>
@@ -90,7 +95,12 @@ const route = useRoute()
 const teacher = TEACHER_PROFILE
 
 const isExamsActive = computed(() => {
+  if (route && route.query && route.query.filter) return false
   return props.activeTab === 'exams' || (route && route.path && route.path.startsWith('/teacher/exam'))
+})
+
+const isGradingActive = computed(() => {
+  return route && route.query && route.query.filter === 'review'
 })
 
 const isStudentsActive = computed(() => {

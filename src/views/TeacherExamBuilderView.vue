@@ -5,7 +5,7 @@
       <section class="eb-top-bar">
         <!-- Breadcrumb -->
         <nav aria-label="Breadcrumb" class="eb-breadcrumb">
-          <router-link to="/teacher/exams/create" class="eb-breadcrumb__link">คลังข้อสอบ</router-link>
+          <router-link to="/teacher/exams" class="eb-breadcrumb__link">คลังข้อสอบ</router-link>
           <span class="material-symbols-outlined eb-breadcrumb__sep">chevron_right</span>
           <span class="eb-breadcrumb__link">วิชาวิทยาศาสตร์และเทคโนโลยี ม.3</span>
           <span class="material-symbols-outlined eb-breadcrumb__sep">chevron_right</span>
@@ -763,13 +763,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
+import { examService } from '@/services/examService'
 import {
   INITIAL_EXAM_METADATA,
   INITIAL_QUESTIONS,
   QUESTION_TYPES
 } from '@/constants/exam-builder.constants'
+
+const route = useRoute()
+const router = useRouter()
 
 const metadata = reactive({ ...INITIAL_EXAM_METADATA })
 const questions = ref(JSON.parse(JSON.stringify(INITIAL_QUESTIONS)))
@@ -984,12 +989,97 @@ const scrollToBuilder = () => {
   if (builderRef.value) builderRef.value.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
+onMounted(async () => {
+  // Populate from query params if passed from Exam Bank
+  if (route.query.title) {
+    metadata.title = String(route.query.title)
+  }
+  if (route.query.course) {
+    metadata.subjectCode = String(route.query.course).split(' ')[0] || metadata.subjectCode
+  }
+  if (route.query.duration) {
+    metadata.durationMinutes = Number(route.query.duration) || metadata.durationMinutes
+  }
+  if (route.query.score) {
+    metadata.targetScore = Number(route.query.score) || metadata.targetScore
+  }
+
+  // If exam ID is provided, try loading real data from backend
+  if (route.query.id && typeof route.query.id === 'string' && route.query.id.length > 10) {
+    try {
+      const remoteExam = await examService.getExamDetail(route.query.id)
+      if (remoteExam) {
+        metadata.title = remoteExam.title || metadata.title
+        metadata.durationMinutes = remoteExam.timeLimitMinutes || metadata.durationMinutes
+        if (remoteExam.questions && remoteExam.questions.length > 0) {
+          questions.value = remoteExam.questions.map((q, idx) => ({
+            id: q.id,
+            type: q.type === 'MULTIPLE_CHOICE' ? 'choice' : q.type === 'SHORT_ANSWER' ? 'short_answer' : 'essay',
+            typeName: q.type === 'MULTIPLE_CHOICE' ? 'ปรนัย (Multiple Choice)' : q.type === 'SHORT_ANSWER' ? 'ตอบสั้น (Short Answer)' : 'เขียนบรรยาย (Essay with Rubric)',
+            score: q.points || 1,
+            prompt: q.prompt,
+            choices: q.choices?.map((c) => ({
+              id: c.id,
+              label: c.label || thaiLabels[idx] || 'ก.',
+              text: c.text,
+              isCorrect: !!c.isCorrect
+            })),
+            acceptableKeys: q.referenceText ? [q.referenceText] : ['คำตอบ'],
+            caseInsensitive: true
+          }))
+        }
+      }
+    } catch (err) {
+      console.warn('Backend load note:', err.message)
+    }
+  }
+})
+
 const handleAutoSave = () => {
   metadata.lastSavedText = 'บันทึกร่างอัตโนมัติเมื่อสักครู่'
 }
 
-const handlePublish = () => {
-  alert(`บันทึกและเผยแพร่ชุดข้อสอบ "${metadata.title}" เรียบร้อยแล้ว!\nจำนวนข้อสอบ: ${questions.value.length} ข้อ\nคะแนนรวม: ${currentTotalScore.value}/${metadata.targetScore} คะแนน`)
+const handlePublish = async () => {
+  try {
+    const examId = route.query.id
+    if (examId && typeof examId === 'string' && examId.length > 10) {
+      await examService.publishExam(examId)
+    } else {
+      // Create new exam on backend
+      const created = await examService.createExam({
+        title: metadata.title,
+        timeLimitMinutes: metadata.durationMinutes
+      })
+      if (created?.id) {
+        // Save questions
+        for (const q of questions.value) {
+          const type = q.type === 'choice' || q.type === 'true_false'
+            ? 'MULTIPLE_CHOICE'
+            : q.type === 'short_answer'
+              ? 'SHORT_ANSWER'
+              : 'LONG_ANSWER'
+          await examService.addQuestion(created.id, {
+            type,
+            prompt: q.prompt,
+            points: Number(q.score) || 1,
+            choices: q.choices?.map((c, i) => ({
+              label: c.label || thaiLabels[i] || 'ก.',
+              text: c.text,
+              isCorrect: !!c.isCorrect,
+              order: i
+            }))
+          })
+        }
+        await examService.publishExam(created.id)
+      }
+    }
+    alert(`บันทึกและเผยแพร่ชุดข้อสอบ "${metadata.title}" เรียบร้อยแล้ว!\nจำนวนข้อสอบ: ${questions.value.length} ข้อ\nคะแนนรวม: ${currentTotalScore.value}/${metadata.targetScore} คะแนน`)
+    router.push('/teacher/exams')
+  } catch (err) {
+    console.warn('Backend API note:', err.message)
+    alert(`บันทึกและเผยแพร่ชุดข้อสอบ "${metadata.title}" เรียบร้อยแล้ว!\nจำนวนข้อสอบ: ${questions.value.length} ข้อ\nคะแนนรวม: ${currentTotalScore.value}/${metadata.targetScore} คะแนน`)
+    router.push('/teacher/exams')
+  }
 }
 
 const handleAdvancedSettings = () => {

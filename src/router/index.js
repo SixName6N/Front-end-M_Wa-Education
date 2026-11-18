@@ -3,6 +3,7 @@ import LoginView from '@/views/LoginView.vue'
 import StudentExamListView from '@/views/StudentExamListView.vue'
 import TeacherStudentManagementView from '@/views/TeacherStudentManagementView.vue'
 import TeacherExamBuilderView from '@/views/TeacherExamBuilderView.vue'
+import TeacherExamBankView from '@/views/TeacherExamBankView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,7 +33,7 @@ const router = createRouter({
       redirect: '/student/exams'
     },
     {
-      path: '/teacher/students',
+      path: '/teacher/studentsList',
       name: 'teacher-students',
       component: TeacherStudentManagementView,
       meta: {
@@ -49,7 +50,15 @@ const router = createRouter({
     },
     {
       path: '/teacher/exams',
-      redirect: '/teacher/exams/create'
+      name: 'teacher-exam-bank',
+      component: TeacherExamBankView,
+      meta: {
+        title: 'คลังข้อสอบ (Exam Bank) - ExamHub'
+      }
+    },
+    {
+      path: '/teacher/exam-bank',
+      redirect: '/teacher/exams'
     },
     {
       path: '/teacher/exam-builder',
@@ -57,7 +66,7 @@ const router = createRouter({
     },
     {
       path: '/teacher',
-      redirect: '/teacher/students'
+      redirect: '/teacher/studentsList'
     },
     {
       path: '/home',
