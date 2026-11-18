@@ -18,7 +18,7 @@
           <!-- Stat 1: Pending Review -->
           <div class="grading-stat-item">
             <div class="grading-stat-icon grading-stat-icon--amber">
-              <ClipboardList :size="20" />
+              <span class="material-symbols-outlined text-[20px]">assignment_late</span>
             </div>
             <div class="grading-stat-info">
               <span class="grading-stat-label">ข้อสอบที่รอตรวจ</span>
@@ -31,7 +31,7 @@
           <!-- Stat 2: Completed -->
           <div class="grading-stat-item">
             <div class="grading-stat-icon grading-stat-icon--emerald">
-              <CheckCircle2 :size="20" />
+              <span class="material-symbols-outlined text-[20px]">task_alt</span>
             </div>
             <div class="grading-stat-info">
               <span class="grading-stat-label">ตรวจเสร็จสมบูรณ์แล้ว</span>
@@ -51,7 +51,7 @@
             :class="{ 'grading-tab-btn--active': activeTab === 'all' }"
             @click="activeTab = 'all'"
           >
-            <BookOpen :size="16" />
+            <span class="material-symbols-outlined text-[16px]">menu_book</span>
             <span>ทั้งหมด</span>
             <span class="grading-tab-badge">{{ pendingExams.length + completedExams.length }} ชุด</span>
           </button>
@@ -62,7 +62,7 @@
             :class="{ 'grading-tab-btn--active': activeTab === 'pending' }"
             @click="activeTab = 'pending'"
           >
-            <ClipboardList :size="16" />
+            <span class="material-symbols-outlined text-[16px]">assignment_late</span>
             <span>งานที่ต้องตรวจ</span>
             <span class="grading-tab-badge">{{ pendingExams.length }} ชุด</span>
           </button>
@@ -73,7 +73,7 @@
             :class="{ 'grading-tab-btn--active': activeTab === 'completed' }"
             @click="activeTab = 'completed'"
           >
-            <CheckCircle2 :size="16" />
+            <span class="material-symbols-outlined text-[16px]">task_alt</span>
             <span>ตรวจเสร็จแล้ว / ดูผลคะแนน</span>
             <span class="grading-tab-badge">{{ completedExams.length }} ชุด</span>
           </button>
@@ -81,7 +81,7 @@
 
         <!-- Search Input -->
         <div class="grading-search-wrap">
-          <Search class="grading-search-icon" :size="18" />
+          <span class="material-symbols-outlined grading-search-icon text-[18px]">search</span>
           <input
             v-model="searchQuery"
             type="text"
@@ -94,173 +94,445 @@
             class="grading-search-clear"
             @click="searchQuery = ''"
           >
-            <X :size="16" />
+            <span class="material-symbols-outlined text-[16px]">close</span>
           </button>
         </div>
       </div>
 
-      <!-- SECTION 1: Pending Grading (Action Required) -->
-      <section
-        v-if="shouldShowPendingSection"
-        class="grading-section"
-      >
-        <div class="grading-section-header">
-          <div class="grading-section-title-wrap">
-            <span class="grading-dot grading-dot--amber"></span>
-            <h2 class="grading-section-title">ชุดข้อสอบที่รออาจารย์ตรวจให้คะแนน</h2>
-          </div>
-          <span class="grading-section-hint">มีข้อสอบอัตนัยที่ต้องการคะแนนจากผู้สอน</span>
-        </div>
+      <!-- Loading State -->
+      <div v-if="loading" class="grading-empty-state">
+        <span class="material-symbols-outlined grading-empty-icon animate-spin">sync</span>
+        <h3 class="grading-empty-title">กำลังโหลดข้อมูลการตรวจข้อสอบ...</h3>
+        <p class="grading-empty-desc">กำลังเชื่อมต่อฐานข้อมูลและประมวลผลรายการส่งข้อสอบ</p>
+      </div>
 
-        <!-- Pending Cards List -->
-        <article
-          v-for="exam in filteredPendingExams"
-          :key="exam.id"
-          class="grading-pending-card"
-        >
-          <div class="grading-pending-accent-bar"></div>
-
-          <div class="grading-pending-body">
-            <!-- Badges line -->
-            <div class="grading-badges-row">
-              <span class="grading-badge-course">
-                <GraduationCap :size="14" />
-                <span>{{ exam.courseCode }} • {{ exam.category }}</span>
-              </span>
-              <span class="grading-badge-alert">
-                <span class="grading-pulse-dot"></span>
-                <span>มีข้อเขียนรอตรวจ</span>
-              </span>
-            </div>
-
-            <!-- Title & Meta -->
-            <div>
-              <h3 class="grading-card-title">{{ exam.title }}</h3>
-              <p class="grading-card-meta">
-                <span>นักเรียนส่งข้อสอบแล้ว {{ exam.submittedCount }} จาก {{ exam.totalStudents }} คน</span>
-                <span class="text-gray-300">•</span>
-                <span class="grading-meta-tag">รอตรวจ {{ exam.pendingCount }} คน</span>
-              </p>
-            </div>
-
-            <!-- Auto-grading Progress Bar -->
-            <div class="grading-progress-row">
-              <div class="grading-progress-track">
-                <div
-                  class="grading-progress-bar"
-                  :style="{ width: `${exam.autoGradedPercent}%` }"
-                ></div>
-              </div>
-              <span class="grading-progress-label">
-                <Check :size="14" />
-                <span>ตรวจปรนัยเสร็จแล้ว {{ exam.autoGradedPercent }}% (ระบบตรวจให้อัตโนมัติ)</span>
-              </span>
-            </div>
-          </div>
-
-          <!-- Start Grading CTA Button -->
-          <div>
-            <button
-              type="button"
-              class="grading-cta-btn"
-              @click="startGrading(exam)"
-            >
-              <span>เริ่มตรวจและให้คะแนนนักเรียน</span>
-              <ArrowRight :size="18" />
-            </button>
-          </div>
-        </article>
-      </section>
-
-      <!-- SECTION 2: Completed / View Scores -->
-      <section
-        v-if="shouldShowCompletedSection"
-        class="grading-section"
-      >
-        <div class="grading-section-header">
-          <div class="grading-section-title-wrap">
-            <span class="grading-dot grading-dot--emerald"></span>
-            <h2 class="grading-section-title">ชุดข้อสอบที่ตรวจเสร็จแล้ว (ดูคะแนนได้ทันที)</h2>
-          </div>
-          <span class="grading-section-hint">คะแนนสรุปพร้อมให้นักเรียนและจัดทำรายงาน</span>
-        </div>
-
-        <!-- Completed Cards Stack -->
-        <div class="grading-completed-list">
-          <article
-            v-for="exam in filteredCompletedExams"
-            :key="exam.id"
-            class="grading-completed-card"
-          >
-            <div class="grading-completed-body">
-              <div class="grading-badges-row">
-                <span class="grading-badge-gray">{{ exam.courseCode }}</span>
-                <span class="grading-badge-green">
-                  <CheckCircle2 :size="14" />
-                  <span>ตรวจครบ 100%</span>
-                </span>
-                <span class="text-xs text-gray-500">{{ exam.classroomInfo }}</span>
-              </div>
-
-              <div>
-                <h3 class="grading-completed-title">{{ exam.title }}</h3>
-                <p class="grading-completed-desc">
-                  {{ exam.summaryText }}
-                </p>
-              </div>
-            </div>
-
-            <!-- View Score Button -->
-            <div>
-              <button
-                type="button"
-                class="grading-view-scores-btn"
-                @click="viewExamScores(exam)"
-              >
-                <Eye :size="16" />
-                <span>ดูคะแนนนักเรียน</span>
-              </button>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <!-- Empty State if No Results Found -->
-      <div v-if="noResultsFound" class="grading-empty-state">
-        <div class="grading-empty-icon">
-          <SearchX :size="24" />
-        </div>
-        <h3 class="grading-empty-title">ไม่พบชุดข้อสอบที่ค้นหา</h3>
-        <p class="grading-empty-desc">ลองค้นหาด้วยชื่อชุดข้อสอบ รหัสวิชา หรือเปลี่ยนแท็บตัวกรอง</p>
+      <!-- Error State -->
+      <div v-else-if="fetchError" class="grading-empty-state">
+        <span class="material-symbols-outlined grading-empty-icon" style="color: #ef4444;">error</span>
+        <h3 class="grading-empty-title">เกิดข้อผิดพลาดในการโหลดข้อมูล</h3>
+        <p class="grading-empty-desc">{{ fetchError }}</p>
         <button
           type="button"
           class="grading-empty-btn"
-          @click="resetSearch"
+          @click="fetchGradingData"
         >
-          ล้างคำค้นหา
+          ลองใหม่อีกครั้ง
         </button>
       </div>
+
+      <!-- Content State -->
+      <template v-else>
+        <!-- SECTION 1: Pending Grading (Action Required) -->
+        <section
+          v-if="shouldShowPendingSection"
+          class="grading-section"
+        >
+          <div class="grading-section-header">
+            <div class="grading-section-title-wrap">
+              <span class="grading-dot grading-dot--amber"></span>
+              <h2 class="grading-section-title">ชุดข้อสอบที่รออาจารย์ตรวจให้คะแนน</h2>
+            </div>
+            <span class="grading-section-hint">มีข้อสอบอัตนัยหรือคำตอบที่ต้องการคะแนนจากผู้สอน</span>
+          </div>
+
+          <!-- Pending Cards List -->
+          <article
+            v-for="exam in filteredPendingExams"
+            :key="exam.id"
+            class="grading-pending-card"
+          >
+            <div class="grading-pending-accent-bar"></div>
+
+            <div class="grading-pending-body">
+              <!-- Badges line -->
+              <div class="grading-badges-row">
+                <span class="grading-badge-course">
+                  <span class="material-symbols-outlined text-[15px]">school</span>
+                  <span>{{ exam.courseCode }} • {{ exam.category }}</span>
+                </span>
+                <span class="grading-badge-alert">
+                  <span class="grading-pulse-dot"></span>
+                  <span>มีคำตอบรอตรวจ ({{ exam.pendingCount }} คน)</span>
+                </span>
+              </div>
+
+              <!-- Title & Meta -->
+              <div>
+                <h3 class="grading-card-title">{{ exam.title }}</h3>
+                <p class="grading-card-meta">
+                  <span>นักเรียนส่งข้อสอบแล้ว {{ exam.submittedCount }} จาก {{ exam.totalStudents }} คน</span>
+                  <span class="text-gray-300">•</span>
+                  <span class="grading-meta-tag">รอตรวจ {{ exam.pendingCount }} คน</span>
+                </p>
+              </div>
+
+              <!-- Progress Indicator -->
+              <div class="grading-progress-row">
+                <div class="grading-progress-track">
+                  <div
+                    class="grading-progress-bar"
+                    :style="{ width: `${exam.autoGradedPercent}%` }"
+                  ></div>
+                </div>
+                <span class="grading-progress-label">
+                  <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                  <span>ตรวจเสร็จแล้ว {{ exam.autoGradedPercent }}%</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Start Grading CTA Button -->
+            <div>
+              <button
+                type="button"
+                class="grading-cta-btn"
+                @click="startGrading(exam)"
+              >
+                <span>เริ่มตรวจและให้คะแนนนักเรียน</span>
+                <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <!-- SECTION 2: Completed / View Scores -->
+        <section
+          v-if="shouldShowCompletedSection"
+          class="grading-section"
+        >
+          <div class="grading-section-header">
+            <div class="grading-section-title-wrap">
+              <span class="grading-dot grading-dot--emerald"></span>
+              <h2 class="grading-section-title">ชุดข้อสอบที่ตรวจเสร็จแล้ว (ดูคะแนนได้ทันที)</h2>
+            </div>
+            <span class="grading-section-hint">คะแนนสรุปพร้อมให้นักเรียนและจัดทำรายงาน</span>
+          </div>
+
+          <!-- Completed Cards Stack -->
+          <div class="grading-completed-list">
+            <article
+              v-for="exam in filteredCompletedExams"
+              :key="exam.id"
+              class="grading-completed-card"
+            >
+              <div class="grading-completed-body">
+                <div class="grading-badges-row">
+                  <span class="grading-badge-gray">{{ exam.courseCode }}</span>
+                  <span class="grading-badge-green">
+                    <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                    <span>ตรวจครบ 100%</span>
+                  </span>
+                  <span class="text-xs text-gray-500">{{ exam.classroomInfo }}</span>
+                </div>
+
+                <div>
+                  <h3 class="grading-completed-title">{{ exam.title }}</h3>
+                  <p class="grading-completed-desc">
+                    {{ exam.summaryText }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- View Score Button -->
+              <div>
+                <button
+                  type="button"
+                  class="grading-view-scores-btn"
+                  @click="viewExamScores(exam)"
+                >
+                  <span class="material-symbols-outlined text-[16px]">visibility</span>
+                  <span>ดูคะแนนนักเรียน</span>
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- Empty State if No Results Found -->
+        <div v-if="noResultsFound" class="grading-empty-state">
+          <div class="grading-empty-icon">
+            <span class="material-symbols-outlined text-[24px]">search_off</span>
+          </div>
+          <h3 class="grading-empty-title">ไม่พบชุดข้อสอบตามเงื่อนไข</h3>
+          <p class="grading-empty-desc">ยังไม่มีชุดข้อสอบที่มีนักเรียนส่งคำตอบ หรือลองเปลี่ยนคำค้นหา/ตัวกรอง</p>
+          <button
+            type="button"
+            class="grading-empty-btn"
+            @click="resetSearch"
+          >
+            ล้างคำค้นหา
+          </button>
+        </div>
+      </template>
 
       <!-- Footer Help & Info Note -->
       <footer class="grading-helper-footer">
         <div class="grading-helper-left">
-          <Info :size="16" class="text-[#015b7e]" />
+          <span class="material-symbols-outlined text-[16px] text-[#015b7e]">info</span>
           <span>ข้อสอบปรนัยจะตรวจให้อัตโนมัติ ส่วนข้อสอบอัตนัยคุณครูสามารถคลิกตรวจทีละคนได้อย่างสะดวก</span>
         </div>
         <div class="grading-helper-right">
-          <a href="#" class="grading-helper-link" @click.prevent="openGuideModal">
-            <BookOpen :size="14" />
+          <a href="#" class="grading-helper-link" @click.prevent="showGuideModal = true">
+            <span class="material-symbols-outlined text-[14px]">menu_book</span>
             <span>คู่มือการตรวจข้อสอบ</span>
           </a>
           <span>•</span>
-          <a href="#" class="grading-helper-link" @click.prevent="openHelpModal">
-            <HelpCircle :size="14" />
+          <a href="#" class="grading-helper-link" @click.prevent="showHelpModal = true">
+            <span class="material-symbols-outlined text-[14px]">help</span>
             <span>สอบถามความช่วยเหลือ</span>
           </a>
         </div>
       </footer>
 
-      <!-- Score Summary Modal -->
+      <!-- Real Grading Workspace Modal -->
+      <div
+        v-if="activeGradingExam"
+        class="grading-modal-overlay"
+        @click.self="closeGradingModal"
+      >
+        <div class="grading-modal-card grading-modal-card--lg">
+          <div class="grading-modal-header">
+            <div>
+              <span class="text-xs font-semibold text-[#015b7e]">{{ activeGradingExam.courseCode }}</span>
+              <h4 class="grading-modal-title">ตรวจข้อสอบ: {{ activeGradingExam.title }}</h4>
+            </div>
+            <button
+              type="button"
+              class="grading-modal-close"
+              @click="closeGradingModal"
+            >
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+
+          <div class="grading-modal-body">
+            <!-- Submissions Loading -->
+            <div v-if="loadingSubmissions" class="text-center py-8 text-gray-500">
+              <span class="material-symbols-outlined text-[32px] animate-spin">sync</span>
+              <p class="mt-2 text-sm">กำลังโหลดรายชื่อนักเรียนและคำตอบ...</p>
+            </div>
+
+            <!-- View 1: Student Answers Detail (Inspecting 1 student) -->
+            <div v-else-if="selectedSubmissionDetail" class="flex flex-col gap-4">
+              <div class="flex items-center justify-between pb-3 border-b">
+                <button
+                  type="button"
+                  class="grading-btn-action-sm"
+                  @click="selectedSubmissionDetail = null"
+                >
+                  <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                  <span>กลับไปหน้ารายชื่อ</span>
+                </button>
+                <div class="text-right">
+                  <span class="font-bold text-gray-800">{{ selectedSubmissionDetail.student?.fullName }}</span>
+                  <span class="text-xs text-gray-500 ml-2">({{ selectedSubmissionDetail.student?.studentCode || 'ไม่มีรหัส' }})</span>
+                  <span class="ml-3 font-semibold text-[#015b7e]">
+                    คะแนนรวม: {{ selectedSubmissionDetail.totalScore ?? 0 }} คะแนน
+                  </span>
+                </div>
+              </div>
+
+              <!-- List of Answers -->
+              <div class="flex flex-col gap-4 max-h-[55vh] overflow-y-auto pr-1">
+                <div
+                  v-for="(ans, idx) in selectedSubmissionDetail.answers"
+                  :key="ans.id"
+                  class="grading-answer-box"
+                >
+                  <div class="flex items-center justify-between text-xs text-gray-600">
+                    <span class="font-bold">ข้อที่ {{ idx + 1 }} • {{ ans.type === 'MULTIPLE_CHOICE' ? 'ปรนัย' : 'อัตนัย' }}</span>
+                    <span>คะแนนเต็ม: {{ ans.points }} คะแนน</span>
+                  </div>
+
+                  <p class="text-sm font-medium text-gray-800">{{ ans.prompt }}</p>
+
+                  <!-- Multiple Choice Display -->
+                  <div v-if="ans.type === 'MULTIPLE_CHOICE'" class="text-xs space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold">สถานะ:</span>
+                      <span v-if="ans.isCorrect" class="text-emerald-700 font-bold flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">check_circle</span> ถูกต้อง ({{ ans.awardedPoints }} คะแนน)
+                      </span>
+                      <span v-else class="text-rose-700 font-bold flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">cancel</span> ไม่ถูกต้อง (0 คะแนน)
+                      </span>
+                      <span class="text-gray-400 text-[11px]">(ตรวจอัตโนมัติ)</span>
+                    </div>
+                  </div>
+
+                  <!-- Essay Answer Display & Grading -->
+                  <div v-else class="flex flex-col gap-2">
+                    <div class="text-xs font-semibold text-gray-700">คำตอบของนักเรียน:</div>
+                    <div class="grading-answer-student-text">
+                      {{ ans.textAnswer || '(นักเรียนไม่ได้ระบุคำตอบ)' }}
+                    </div>
+
+                    <div v-if="ans.referenceText" class="grading-answer-ref">
+                      <strong>แนวคำตอบ/เกณฑ์:</strong> {{ ans.referenceText }}
+                    </div>
+
+                    <!-- Grading Controls -->
+                    <div class="grading-grade-actions">
+                      <button
+                        type="button"
+                        class="grading-btn-action-sm"
+                        :class="{ 'grading-btn-action-sm--primary': ans.isCorrect === true }"
+                        @click="setAnswerCorrectness(ans, true)"
+                      >
+                        <span class="material-symbols-outlined text-[14px]">check</span>
+                        <span>ให้คะแนนเต็ม</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="grading-btn-action-sm"
+                        :class="{ 'grading-btn-action-sm--primary': ans.isCorrect === false }"
+                        @click="setAnswerCorrectness(ans, false)"
+                      >
+                        <span class="material-symbols-outlined text-[14px]">close</span>
+                        <span>ไม่ให้คะแนน</span>
+                      </button>
+
+                      <div class="flex items-center gap-1">
+                        <span class="text-xs text-gray-600">คะแนน:</span>
+                        <input
+                          v-model.number="ans.awardedPoints"
+                          type="number"
+                          min="0"
+                          :max="ans.points"
+                          step="0.5"
+                          class="grading-score-input"
+                        />
+                      </div>
+
+                      <input
+                        v-model="ans.graderComment"
+                        type="text"
+                        placeholder="หมายเหตุ/คำแนะนำแก่นักเรียน..."
+                        class="grading-comment-input"
+                      />
+
+                      <button
+                        type="button"
+                        class="grading-save-btn"
+                        :disabled="gradingActionLoading"
+                        @click="saveAnswerGrade(ans)"
+                      >
+                        บันทึกข้อนี้
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Student Detail Footer Actions -->
+              <div class="flex items-center justify-between pt-3 border-t">
+                <span class="text-xs text-gray-500">
+                  สถานะการส่ง: {{ selectedSubmissionDetail.status }}
+                </span>
+                <button
+                  type="button"
+                  class="grading-btn-action-sm grading-btn-action-sm--primary"
+                  :disabled="gradingActionLoading"
+                  @click="handleReleaseSubmission(selectedSubmissionDetail.id)"
+                >
+                  <span class="material-symbols-outlined text-[16px]">send</span>
+                  <span>ส่งผลสอบให้นักเรียนคนนี้</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- View 2: Submissions Table for this Exam -->
+            <div v-else class="flex flex-col gap-4">
+              <div v-if="gradingSubmissions.length === 0" class="text-center py-8 text-gray-500">
+                <span class="material-symbols-outlined text-[36px] text-gray-400">person_off</span>
+                <p class="mt-2 text-sm font-medium">ยังไม่มีนักเรียนส่งข้อสอบชุดนี้</p>
+              </div>
+
+              <div v-else class="grading-student-table-wrap">
+                <table class="grading-student-table">
+                  <thead>
+                    <tr>
+                      <th>นักเรียน</th>
+                      <th>รหัสประจำตัว</th>
+                      <th>เวลาที่ส่ง</th>
+                      <th>สถานะ</th>
+                      <th>คะแนน</th>
+                      <th>จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="sub in gradingSubmissions" :key="sub.id">
+                      <td class="font-medium">{{ sub.student?.fullName || 'ไม่ระบุชื่อ' }}</td>
+                      <td>{{ sub.student?.studentCode || '-' }}</td>
+                      <td>{{ formatSubmissionDate(sub.submittedAt) }}</td>
+                      <td>
+                        <span
+                          v-if="sub.needsGrading"
+                          class="grading-badge-status grading-badge-status--amber"
+                        >
+                          รอตรวจอัตนัย ({{ sub.ungradedCount }} ข้อ)
+                        </span>
+                        <span
+                          v-else-if="sub.status === 'RELEASED'"
+                          class="grading-badge-status grading-badge-status--blue"
+                        >
+                          ปล่อยผลแล้ว
+                        </span>
+                        <span
+                          v-else-if="sub.status === 'GRADED'"
+                          class="grading-badge-status grading-badge-status--green"
+                        >
+                          ตรวจครบแล้ว
+                        </span>
+                        <span
+                          v-else
+                          class="grading-badge-status grading-badge-status--gray"
+                        >
+                          {{ sub.status }}
+                        </span>
+                      </td>
+                      <td class="font-bold">{{ sub.totalScore ?? '-' }}</td>
+                      <td>
+                        <button
+                          type="button"
+                          class="grading-btn-action-sm grading-btn-action-sm--primary"
+                          @click="openStudentSubmission(sub)"
+                        >
+                          <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                          <span>ตรวจคำตอบ</span>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="grading-modal-footer">
+            <button
+              v-if="gradingSubmissions.length > 0 && !selectedSubmissionDetail"
+              type="button"
+              class="grading-btn-action-sm grading-btn-action-sm--primary"
+              :disabled="gradingActionLoading"
+              @click="handleReleaseAllResults(activeGradingExam.id)"
+            >
+              <span class="material-symbols-outlined text-[16px]">campaign</span>
+              <span>ปล่อยผลสอบทั้งชุดให้นักเรียนทุกคน</span>
+            </button>
+            <button
+              type="button"
+              class="grading-view-scores-btn"
+              @click="closeGradingModal"
+            >
+              ปิดหน้าต่าง
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score Summary Modal (Real API Data) -->
       <div
         v-if="selectedExamForScores"
         class="grading-modal-overlay"
@@ -277,7 +549,7 @@
               class="grading-modal-close"
               @click="selectedExamForScores = null"
             >
-              <X :size="20" />
+              <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
 
@@ -285,15 +557,15 @@
             <div class="grading-modal-stat-grid">
               <div class="grading-modal-stat-box">
                 <span class="grading-modal-stat-label">จำนวนผู้ส่งข้อสอบ</span>
-                <div class="grading-modal-stat-val">{{ selectedExamForScores.totalStudents || 35 }} คน</div>
+                <div class="grading-modal-stat-val">{{ selectedExamForScores.totalStudents }} คน</div>
               </div>
               <div class="grading-modal-stat-box">
                 <span class="grading-modal-stat-label">คะแนนเฉลี่ย</span>
-                <div class="grading-modal-stat-val text-emerald-600">{{ selectedExamForScores.avgScore || '8.42' }} คะแนน</div>
+                <div class="grading-modal-stat-val text-emerald-600">{{ selectedExamForScores.avgScore }} คะแนน</div>
               </div>
             </div>
             <p class="text-sm text-gray-600">
-              สถานะ: ตรวจคำตอบครบถ้วนเรียบร้อยแล้ว ข้อมูลคะแนนถูกบันทึกลงสู่สมุดเกรดและส่งผลสอบให้นักเรียนแล้ว
+              สถานะ: ตรวจคำตอบครบถ้วนเรียบร้อยแล้ว ข้อมูลคะแนนถูกคำนวณและบันทึกจากระบบวัดผลจริง
             </p>
           </div>
 
@@ -308,109 +580,190 @@
           </div>
         </div>
       </div>
+
+      <!-- Guide Modal -->
+      <div
+        v-if="showGuideModal"
+        class="grading-modal-overlay"
+        @click.self="showGuideModal = false"
+      >
+        <div class="grading-modal-card">
+          <div class="grading-modal-header">
+            <h4 class="grading-modal-title">คู่มือการตรวจข้อสอบและประเมินผล</h4>
+            <button
+              type="button"
+              class="grading-modal-close"
+              @click="showGuideModal = false"
+            >
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+          <div class="grading-modal-body text-sm text-gray-700 space-y-2">
+            <p><strong>1. ข้อสอบปรนัย (Multiple Choice):</strong> ระบบจะตรวจคำตอบและคิดคะแนนให้อัตโนมัติทันทีที่นักเรียนส่งข้อสอบ</p>
+            <p><strong>2. ข้อสอบอัตนัย (Essay):</strong> คุณครูสามารถคลิก "เริ่มตรวจและให้คะแนนนักเรียน" เพื่ออ่านคำตอบ ตรวจเทียบกับเกณฑ์แนวคำตอบ และใส่คะแนนพร้อมคำแนะนำ</p>
+            <p><strong>3. การส่งผลสอบ:</strong> เมื่อตรวจเสร็จ สามารถกด "ส่งผลตรวจให้นักเรียน" หรือ "ปล่อยผลสอบทั้งชุด" เพื่อให้นักเรียนดูผลคะแนนได้ทันที</p>
+          </div>
+          <div class="grading-modal-footer">
+            <button
+              type="button"
+              class="grading-view-scores-btn"
+              @click="showGuideModal = false"
+            >
+              เข้าใจแล้ว
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help Modal -->
+      <div
+        v-if="showHelpModal"
+        class="grading-modal-overlay"
+        @click.self="showHelpModal = false"
+      >
+        <div class="grading-modal-card">
+          <div class="grading-modal-header">
+            <h4 class="grading-modal-title">ศูนย์ความช่วยเหลือด้านการวัดผล</h4>
+            <button
+              type="button"
+              class="grading-modal-close"
+              @click="showHelpModal = false"
+            >
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+          <div class="grading-modal-body text-sm text-gray-700 space-y-2">
+            <p>หากพบปัญหาในการตรวจข้อสอบหรือการคำนวณคะแนน กรุณาติดต่อฝ่ายสนับสนุนการใช้งาน:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li><strong>อีเมล:</strong> support@examhub.local</li>
+              <li><strong>โทรศัพท์:</strong> 02-xxx-xxxx ต่อ 104 (ฝ่ายทะเบียนและวัดผล)</li>
+            </ul>
+          </div>
+          <div class="grading-modal-footer">
+            <button
+              type="button"
+              class="grading-view-scores-btn"
+              @click="showHelpModal = false"
+            >
+              ปิดหน้าต่าง
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </TeacherLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
-import {
-  ClipboardList,
-  CheckCircle2,
-  BookOpen,
-  Search,
-  SearchX,
-  X,
-  GraduationCap,
-  Check,
-  ArrowRight,
-  Eye,
-  Info,
-  HelpCircle
-} from 'lucide-vue-next'
 import { examService } from '@/services/examService'
-
-const router = useRouter()
+import { gradingService } from '@/services/gradingService'
 
 // Filter states
 const activeTab = ref('all') // 'all' | 'pending' | 'completed'
 const searchQuery = ref('')
+
+// Pure API Data States (Zero hardcoded mock)
+const pendingExams = ref([])
+const completedExams = ref([])
+const loading = ref(false)
+const fetchError = ref('')
+
+// Real Grading Flow States
+const activeGradingExam = ref(null)
+const gradingSubmissions = ref([])
+const loadingSubmissions = ref(false)
+const selectedSubmissionDetail = ref(null)
+const gradingActionLoading = ref(false)
+
+// Modals
 const selectedExamForScores = ref(null)
+const showGuideModal = ref(false)
+const showHelpModal = ref(false)
 
-// Data state
-const pendingExams = ref([
-  {
-    id: 'p-1',
-    courseCode: 'ว23101 วิทยาศาสตร์ ม.3',
-    category: 'สอบกลางภาค',
-    title: 'แบบทดสอบวัดผลกลางภาค: วิทยาศาสตร์และเทคโนโลยี',
-    submittedCount: 32,
-    totalStudents: 35,
-    pendingCount: 3,
-    autoGradedPercent: 100,
-    hasEssay: true
-  }
-])
+/**
+ * Fetch real exam & grading data from API
+ */
+async function fetchGradingData() {
+  loading.value = true
+  fetchError.value = ''
+  pendingExams.value = []
+  completedExams.value = []
 
-const completedExams = ref([
-  {
-    id: 'c-1',
-    courseCode: 'ว22101 วิทยาศาสตร์ ม.2',
-    category: 'แบบฝึกหัดท้ายหน่วย',
-    title: 'แบบฝึกหัดหน่วยที่ 1: เซลล์ของสิ่งมีชีวิต',
-    classroomInfo: 'ห้อง ม.2/1 - ม.2/2 (35 คน)',
-    totalStudents: 35,
-    avgScore: '8.42 / 10',
-    summaryText: 'ตรวจครบถ้วนทุกคนแล้ว • คะแนนเฉลี่ย 8.42 / 10 คะแนน'
-  },
-  {
-    id: 'c-2',
-    courseCode: 'ว23101 วิทยาศาสตร์ ม.3',
-    category: 'ควิซท้ายคาบ',
-    title: 'ควิซท้ายคาบ: พันธุศาสตร์และการถ่ายทอดลักษณะ',
-    classroomInfo: 'ปรนัยล้วน 15 ข้อ',
-    totalStudents: 35,
-    avgScore: '12.3 / 15',
-    summaryText: 'ตรวจคำตอบอัตโนมัติทันทีที่นักเรียนส่ง • คะแนนเฉลี่ย 12.3 / 15 คะแนน'
-  },
-  {
-    id: 'c-3',
-    courseCode: 'ว30201 ฟิสิกส์ ม.4',
-    category: 'แบบทดสอบย่อย',
-    title: 'แบบทดสอบย่อย: การเคลื่อนที่และแรง',
-    classroomInfo: 'ห้อง ม.4/1 (28 คน)',
-    totalStudents: 28,
-    avgScore: '16.5 / 20',
-    summaryText: 'ตรวจให้คะแนนนักเรียนครบทั้งชั้นแล้ว • คะแนนเต็ม 20 คะแนน'
-  }
-])
-
-// Load dynamic data from API if available
-onMounted(async () => {
   try {
-    const list = await examService.listExams()
-    if (list && list.length > 0) {
-      // If there are real closed/review exams from backend
-      const reviewItems = list.filter((e) => e.status === 'CLOSED' || e.status === 'review')
-      if (reviewItems.length > 0) {
-        pendingExams.value = reviewItems.map((item) => ({
-          id: item.id,
-          courseCode: item.course?.code || item.courseCode || 'ว23101 วิทยาศาสตร์',
-          category: item.category || 'สอบวัดผล',
-          title: item.title,
-          submittedCount: item.submittedCount || 32,
-          totalStudents: item.totalStudents || 35,
-          pendingCount: item.pendingCount || 3,
-          autoGradedPercent: 100,
-          hasEssay: true
-        }))
+    const examsList = await examService.listExams()
+    if (!examsList || examsList.length === 0) {
+      return
+    }
+
+    // Load submissions for each exam concurrently
+    const gradingPromises = examsList.map(async (exam) => {
+      try {
+        const submissions = await gradingService.listExamSubmissions(exam.id)
+        return { exam, submissions }
+      } catch {
+        return { exam, submissions: [] }
+      }
+    })
+
+    const results = await Promise.all(gradingPromises)
+
+    const pending = []
+    const completed = []
+
+    for (const { exam, submissions } of results) {
+      const courseCode = exam.course?.code || exam.courseCode || 'รายวิชา'
+      const title = exam.title
+      const category = exam.category || 'สอบวัดผล'
+      const submittedCount = submissions.length
+      const totalStudents = exam._count?.assignments ? exam._count.assignments * 35 : (submittedCount || 0)
+
+      const pendingSubmissions = submissions.filter((s) => s.needsGrading || s.status === 'SUBMITTED')
+      const completedSubmissions = submissions.filter((s) => s.status === 'GRADED' || s.status === 'RELEASED')
+
+      if (pendingSubmissions.length > 0 || (exam.status === 'CLOSED' && submittedCount > 0 && pendingSubmissions.length > 0)) {
+        pending.push({
+          id: exam.id,
+          courseCode,
+          category,
+          title,
+          submittedCount,
+          totalStudents: Math.max(totalStudents, submittedCount),
+          pendingCount: pendingSubmissions.length,
+          autoGradedPercent: submittedCount > 0 ? Math.round(((submittedCount - pendingSubmissions.length) / submittedCount) * 100) : 100,
+          hasEssay: true,
+          submissions
+        })
+      } else if (completedSubmissions.length > 0) {
+        const totalScoreSum = completedSubmissions.reduce((sum, s) => sum + (Number(s.totalScore) || 0), 0)
+        const avgScore = completedSubmissions.length > 0 ? (totalScoreSum / completedSubmissions.length).toFixed(1) : '0'
+
+        completed.push({
+          id: exam.id,
+          courseCode,
+          category,
+          title,
+          classroomInfo: `ส่งแล้ว ${submittedCount} คน`,
+          totalStudents: submittedCount,
+          avgScore: `${avgScore}`,
+          summaryText: `ตรวจคำตอบครบถ้วน ${completedSubmissions.length} คน • คะแนนเฉลี่ย ${avgScore} คะแนน`,
+          submissions
+        })
       }
     }
+
+    pendingExams.value = pending
+    completedExams.value = completed
   } catch (err) {
-    console.warn('API note in grading view:', err.message)
+    fetchError.value = err.message || 'ไม่สามารถโหลดข้อมูลชุดข้อสอบสำหรับตรวจได้'
+  } finally {
+    loading.value = false
   }
+}
+
+onMounted(() => {
+  fetchGradingData()
 })
 
 // Filtered lists
@@ -449,21 +802,130 @@ const resetSearch = () => {
   activeTab.value = 'all'
 }
 
-// User Actions
-const startGrading = (exam) => {
-  alert(`กำลังเปิดหน้าจอตรวจข้อเขียนและให้คะแนนทีละคนสำหรับ: ${exam.title}`)
+/**
+ * Real Grading Flow: Open exam submissions workspace
+ */
+async function startGrading(exam) {
+  activeGradingExam.value = exam
+  selectedSubmissionDetail.value = null
+  loadingSubmissions.value = true
+
+  try {
+    const list = await gradingService.listExamSubmissions(exam.id)
+    gradingSubmissions.value = list
+  } catch (err) {
+    alert(err.message || 'ไม่สามารถโหลดรายการส่งข้อสอบได้')
+    gradingSubmissions.value = []
+  } finally {
+    loadingSubmissions.value = false
+  }
 }
 
-const viewExamScores = (exam) => {
+function closeGradingModal() {
+  activeGradingExam.value = null
+  selectedSubmissionDetail.value = null
+  gradingSubmissions.value = []
+}
+
+/**
+ * Open single student submission to inspect answers and grade
+ */
+async function openStudentSubmission(submission) {
+  loadingSubmissions.value = true
+  try {
+    const detail = await gradingService.getSubmissionDetail(submission.id)
+    selectedSubmissionDetail.value = detail
+  } catch (err) {
+    alert(err.message || 'ไม่สามารถโหลดคำตอบของนักเรียนได้')
+  } finally {
+    loadingSubmissions.value = false
+  }
+}
+
+function setAnswerCorrectness(answer, isCorrect) {
+  answer.isCorrect = isCorrect
+  answer.awardedPoints = isCorrect ? answer.points : 0
+}
+
+/**
+ * Grade single essay answer via API
+ */
+async function saveAnswerGrade(answer) {
+  if (!selectedSubmissionDetail.value) return
+  gradingActionLoading.value = true
+
+  try {
+    const updated = await gradingService.gradeAnswer(answer.id, {
+      isCorrect: answer.isCorrect,
+      awardedPoints: Number(answer.awardedPoints) || 0,
+      graderComment: answer.graderComment || null
+    })
+
+    if (updated?.totalScore !== undefined) {
+      selectedSubmissionDetail.value.totalScore = updated.totalScore
+    }
+
+    // Refresh submission list in background
+    if (activeGradingExam.value) {
+      gradingSubmissions.value = await gradingService.listExamSubmissions(activeGradingExam.value.id)
+    }
+  } catch (err) {
+    alert(err.message || 'บันทึกคะแนนข้อนี้ไม่สำเร็จ')
+  } finally {
+    gradingActionLoading.value = false
+  }
+}
+
+/**
+ * Release result to a single student via API
+ */
+async function handleReleaseSubmission(submissionId) {
+  gradingActionLoading.value = true
+  try {
+    await gradingService.releaseSubmission(submissionId)
+    // Reload details and list
+    if (activeGradingExam.value) {
+      gradingSubmissions.value = await gradingService.listExamSubmissions(activeGradingExam.value.id)
+    }
+    selectedSubmissionDetail.value = null
+    await fetchGradingData()
+  } catch (err) {
+    alert(err.message || 'ส่งผลสอบให้นักเรียนไม่สำเร็จ')
+  } finally {
+    gradingActionLoading.value = false
+  }
+}
+
+/**
+ * Release all exam results to students via API
+ */
+async function handleReleaseAllResults(examId) {
+  if (!confirm('ยืนยันการปล่อยผลสอบทั้งชุดให้นักเรียนทุกคนที่ตรวจเสร็จแล้ว?')) return
+  gradingActionLoading.value = true
+  try {
+    await gradingService.releaseExamResults(examId)
+    gradingSubmissions.value = await gradingService.listExamSubmissions(examId)
+    await fetchGradingData()
+  } catch (err) {
+    alert(err.message || 'ปล่อยผลสอบทั้งชุดไม่สำเร็จ')
+  } finally {
+    gradingActionLoading.value = false
+  }
+}
+
+function viewExamScores(exam) {
   selectedExamForScores.value = exam
 }
 
-const openGuideModal = () => {
-  alert('เปิดคู่มือการตรวจข้อสอบ: การให้คะแนนอัตนัยแบบเกณฑ์รูบริก (Rubric) และการส่งผลสอบ')
-}
-
-const openHelpModal = () => {
-  alert('ติดต่อฝ่ายสนับสนุนด้านการวัดผลและประเมินผลการศึกษา: โทร 02-xxx-xxxx หรืออีเมล support@examhub.local')
+function formatSubmissionDate(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('th-TH', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 </script>
 

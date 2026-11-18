@@ -345,6 +345,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
 import { examService } from '@/services/examService'
+import { mapApiExamToView } from '@/utils/examMappers'
 
 const router = useRouter()
 
@@ -376,39 +377,6 @@ const courseTabs = ref([
 const exams = ref([])
 const loading = ref(false)
 const fetchError = ref('')
-
-/**
- * แปลงข้อมูลจาก API response เป็นรูปแบบที่หน้าจอใช้
- */
-function mapApiExamToView(item) {
-  const statusMap = {
-    PUBLISHED: { status: 'published', statusText: 'เผยแพร่แล้ว' },
-    CLOSED: { status: 'closed', statusText: 'ปิดแล้ว' },
-    DRAFT: { status: 'draft', statusText: 'ฉบับร่าง' }
-  }
-  const mapped = statusMap[item.status] || { status: 'draft', statusText: 'ฉบับร่าง' }
-
-  return {
-    id: item.id,
-    courseId: item.courseId || '',
-    courseCode: item.course?.code || item.courseCode || '',
-    category: item.category || 'สอบวัดผล',
-    status: mapped.status,
-    statusText: mapped.statusText,
-    title: item.title,
-    questionsCount: item._count?.questions ?? item.questions?.length ?? 0,
-    maxScore: item.maxScore || 0,
-    duration: item.timeLimitMinutes || 60,
-    scheduleInfo: item.updatedAt
-      ? `แก้ไขล่าสุด ${new Date(item.updatedAt).toLocaleDateString('th-TH')}`
-      : 'พร้อมใช้งาน',
-    highlightClass:
-      item.status === 'PUBLISHED'
-        ? 'bank-meta-highlight--secondary'
-        : 'bank-meta-highlight--primary',
-    updatedAt: item.updatedAt ? new Date(item.updatedAt).getTime() : Date.now()
-  }
-}
 
 // Filter & Sort logic
 const filteredExams = computed(() => {
@@ -508,7 +476,6 @@ const openCreateModal = () => {
 }
 
 const submitCreateExam = async () => {
-  showCreateModal.value = false
   let createdId = null
   try {
     const res = await examService.createExam({
@@ -516,21 +483,20 @@ const submitCreateExam = async () => {
       timeLimitMinutes: createForm.duration
     })
     if (res?.id) createdId = res.id
+    showCreateModal.value = false
+    router.push({
+      path: '/teacher/exams/create',
+      query: {
+        id: createdId || undefined,
+        title: createForm.title,
+        course: createForm.course,
+        duration: createForm.duration,
+        score: createForm.maxScore
+      }
+    })
   } catch (err) {
-    console.warn('Backend API note:', err.message)
+    alert(`ไม่สามารถสร้างชุดข้อสอบได้: ${err.message}`)
   }
-
-  // Navigate to builder
-  router.push({
-    path: '/teacher/exams/create',
-    query: {
-      id: createdId || undefined,
-      title: createForm.title,
-      course: createForm.course,
-      duration: createForm.duration,
-      score: createForm.maxScore
-    }
-  })
 }
 
 // Delete actions
@@ -546,13 +512,12 @@ const executeDelete = async () => {
       if (typeof targetId === 'string' && targetId.length > 10) {
         await examService.deleteExam(targetId, { force: true })
       }
+      const idx = exams.value.findIndex((e) => e.id === targetId)
+      if (idx !== -1) {
+        exams.value.splice(idx, 1)
+      }
     } catch (err) {
-      console.warn('Backend API delete note:', err.message)
-    }
-
-    const idx = exams.value.findIndex((e) => e.id === targetId)
-    if (idx !== -1) {
-      exams.value.splice(idx, 1)
+      alert(`ไม่สามารถลบชุดข้อสอบได้: ${err.message}`)
     }
   }
   showDeleteModal.value = false
