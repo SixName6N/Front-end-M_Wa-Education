@@ -17,7 +17,7 @@
     <!-- Filter Buttons -->
     <div class="exam-filter__options" role="tablist">
       <button
-        v-for="opt in options"
+        v-for="opt in (options || FILTER_OPTIONS)"
         :key="opt.id"
         type="button"
         class="exam-filter__pill"
@@ -42,12 +42,14 @@ defineProps({
   activeFilter: {
     type: String,
     default: 'all'
+  },
+  options: {
+    type: Array,
+    default: null
   }
 })
 
 defineEmits(['update:modelValue', 'select-filter'])
-
-const options = FILTER_OPTIONS
 </script>
 
 <style scoped src="@/assets/styles/components/exam-filter.css"></style>

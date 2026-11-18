@@ -122,9 +122,40 @@ ctive {
 }
 
 .teacher-navbar__profile {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+}
+
+.teacher-navbar__profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.teacher-navbar__profile-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.teacher-navbar__profile-btn--active {
+  background-color: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.teacher-navbar__chevron {
+  font-size: 18px;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.teacher-navbar__chevron--open {
+  transform: rotate(180deg);
 }
 
 .teacher-navbar__avatar {
@@ -144,6 +175,111 @@ ctive {
   font-size: 12px;
   font-weight: 500;
   color: #374151;
+}
+
+/* Profile Dropdown Popup */
+.teacher-profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  overflow: hidden;
+  animation: dropdownFade 0.15s ease-out;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.teacher-profile-dropdown__header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f9fafb;
+}
+
+.teacher-profile-dropdown__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e0f2fe;
+  color: #015b7e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.teacher-profile-dropdown__info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.teacher-profile-dropdown__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teacher-profile-dropdown__role {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 1px;
+}
+
+.teacher-profile-dropdown__divider {
+  height: 1px;
+  background-color: #e5e7eb;
+  width: 100%;
+}
+
+.teacher-profile-dropdown__menu {
+  padding: 6px;
+}
+
+.teacher-profile-dropdown__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.teacher-profile-dropdown__item--danger {
+  color: #dc2626;
+}
+
+.teacher-profile-dropdown__item--danger:hover {
+  background-color: #fee2e2;
+  color: #b91c1c;
 }
 
 /* Main */
