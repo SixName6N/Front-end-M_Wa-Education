@@ -33,12 +33,16 @@ const router = createRouter({
       redirect: '/student/exams'
     },
     {
-      path: '/teacher/studentsList',
+      path: '/teacher/students',
       name: 'teacher-students',
       component: TeacherStudentManagementView,
       meta: {
         title: 'จัดการรายชื่อนักเรียน (Student Management) - ExamHub'
       }
+    },
+    {
+      path: '/teacher/studentsList',
+      redirect: '/teacher/students'
     },
     {
       path: '/teacher/exams/create',
@@ -74,7 +78,7 @@ const router = createRouter({
     },
     {
       path: '/teacher',
-      redirect: '/teacher/studentsList'
+      redirect: '/teacher/students'
     },
     {
       path: '/home',

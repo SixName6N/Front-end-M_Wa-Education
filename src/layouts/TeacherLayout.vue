@@ -28,7 +28,7 @@
               ตรวจข้อสอบ
             </router-link>
             <router-link
-              to="/teacher/studentsList"
+              to="/teacher/students"
               class="teacher-navbar__link"
               :class="{ 'teacher-navbar__link--active': isStudentsActive }"
             >

@@ -124,16 +124,6 @@
 
         <!-- Registration & IT Support Footnote -->
         <div class="login-card__footer-notes">
-          <div class="login-card__register-row">
-            <span class="login-card__register-label">ยังไม่มีบัญชีผู้ใช้?</span>
-            <a
-              href="/register"
-              class="login-card__register-link"
-              @click.prevent="handleRegister"
-            >
-              {{ currentRoleConfig.registerText }}
-            </a>
-          </div>
           <p class="login-card__helpdesk-note">
             หากพบปัญหาการใช้งาน ติดต่อฝ่ายทะเบียน-วัดผล หรือ IT Helpdesk
           </p>
