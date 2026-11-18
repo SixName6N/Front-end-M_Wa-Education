@@ -758,6 +758,127 @@
           </div>
         </div>
       </div>
+
+      <!-- QUESTION IMPORT MODAL -->
+      <div v-if="showImportModal" class="eb-modal-backdrop" @click.self="closeImportModal">
+        <div class="eb-modal-box eb-import-modal">
+          <div class="eb-modal-top">
+            <div>
+              <h3 class="eb-modal-heading">นำเข้าข้อสอบจากไฟล์ (CSV / Excel)</h3>
+              <p class="eb-modal-sub">
+                รองรับ .csv และ .xlsx • 1 แถว = 1 ข้อ • สูงสุด 500 ข้อ/ไฟล์ และไม่เกิน 5 MB
+              </p>
+            </div>
+            <button type="button" class="eb-icon-btn" :disabled="importBusy" @click="closeImportModal">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <div class="eb-modal-scroll">
+            <!-- ขั้นที่ 1: ดาวน์โหลดแม่แบบ -->
+            <div class="eb-import-step">
+              <div class="eb-import-step-head">
+                <span class="eb-import-step-no">1</span>
+                <div class="eb-import-step-text">
+                  <p class="eb-import-step-title">ดาวน์โหลดแม่แบบไฟล์</p>
+                  <p class="eb-import-step-desc">เปิดด้วย Excel แล้วกรอกข้อมูล (อย่าแก้ชื่อคอลัมน์หัวตาราง)</p>
+                </div>
+                <button type="button" class="eb-btn eb-btn--secondary" @click="downloadImportTemplate">
+                  <span class="material-symbols-outlined text-[18px]">download</span>
+                  ดาวน์โหลดแม่แบบ
+                </button>
+              </div>
+            </div>
+
+            <!-- ขั้นที่ 2: เลือกไฟล์ -->
+            <div class="eb-import-step">
+              <div class="eb-import-step-head">
+                <span class="eb-import-step-no">2</span>
+                <div class="eb-import-step-text">
+                  <p class="eb-import-step-title">เลือกไฟล์ข้อสอบ</p>
+                  <p class="eb-import-step-desc">ไฟล์ .csv ต้องบันทึกเป็น UTF-8 (เพื่อให้อ่านภาษาไทยได้)</p>
+                </div>
+              </div>
+              <label class="eb-import-dropzone">
+                <input
+                  ref="importInputRef"
+                  type="file"
+                  accept=".csv,.xlsx"
+                  class="eb-import-input"
+                  @change="onImportFileChange"
+                />
+                <span class="material-symbols-outlined eb-import-dropzone-icon">upload_file</span>
+                <span v-if="importFileName" class="eb-import-filename">{{ importFileName }}</span>
+                <span v-else class="eb-import-dropzone-hint">คลิกเพื่อเลือกไฟล์ (.csv / .xlsx)</span>
+              </label>
+            </div>
+
+            <!-- error -->
+            <div v-if="importError" class="eb-import-alert eb-import-alert--error">
+              <span class="material-symbols-outlined text-[18px]">error</span>
+              <div>
+                <p>{{ importError }}</p>
+                <ul v-if="importRowErrors.length" class="eb-import-error-list">
+                  <li v-for="(row, i) in importRowErrors" :key="i">
+                    แถว {{ row.row ?? row.line ?? '?' }}: {{ row.message }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- preview (dryRun) -->
+            <div v-if="importPreview" class="eb-import-preview">
+              <div class="eb-modal-summary">
+                <span>พร้อมนำเข้า: <strong>{{ importPreview.wouldImport }} ข้อ</strong></span>
+                <span>คะแนนที่จะเพิ่ม: <strong>{{ importPreview.incomingPoints }} คะแนน</strong></span>
+                <span>คะแนนเต็มหลังนำเข้า: <strong>{{ importPreview.totalsPointsAfter }}</strong></span>
+              </div>
+              <ol class="eb-import-preview-list">
+                <li v-for="p in importPreview.preview" :key="p.index">
+                  <span class="eb-import-preview-type">{{ importPreviewTypeLabel(p.type) }}</span>
+                  <span class="eb-import-preview-prompt">{{ p.prompt }}</span>
+                  <span class="eb-import-preview-points">{{ Number(p.points).toFixed(1) }} คะแนน</span>
+                </li>
+              </ol>
+            </div>
+
+            <!-- success -->
+            <div v-if="importResult" class="eb-import-alert eb-import-alert--success">
+              <span class="material-symbols-outlined text-[18px]">check_circle</span>
+              <p>
+                นำเข้าสำเร็จ {{ importResult.imported }} ข้อ — ตอนนี้ชุดนี้มีคะแนนเต็ม
+                {{ importResult.totalsPoints }} คะแนน
+              </p>
+            </div>
+          </div>
+
+          <div class="eb-modal-bottom eb-import-actions">
+            <p class="eb-import-note">
+              นำเข้าได้เฉพาะชุดสถานะ “ฉบับร่าง” — ระบบจะบันทึกชุดข้อสอบให้ก่อนอัตโนมัติ
+            </p>
+            <div class="eb-import-action-btns">
+              <button
+                type="button"
+                class="eb-btn eb-btn--secondary"
+                :disabled="importBusy || !importFile"
+                @click="previewImport"
+              >
+                <span class="material-symbols-outlined text-[18px]">visibility</span>
+                พรีวิว (ยังไม่บันทึก)
+              </button>
+              <button
+                type="button"
+                class="eb-btn eb-btn--primary"
+                :disabled="importBusy || !importFile"
+                @click="confirmImport"
+              >
+                <span class="material-symbols-outlined text-[18px]">upload</span>
+                {{ importBusy ? 'กำลังทำงาน…' : 'นำเข้าจริง' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </TeacherLayout>
 </template>
@@ -784,6 +905,24 @@ const questionRefs = ref([])
 const builderRef = ref(null)
 const activeExplanations = reactive({})
 const newKeyInput = ref('')
+
+// ---- สถานะการนำเข้าข้อสอบจากไฟล์ ----
+// draftExamId = ชุดข้อสอบที่ผูกอยู่กับหน้าจอนี้ (มีค่าเมื่อแก้ชุดเดิม หรือหลังบันทึกฉบับร่างครั้งแรก)
+const draftExamId = ref(
+  typeof route.query.id === 'string' && route.query.id.length > 10 ? route.query.id : null
+)
+// questionsPersisted = ข้อสอบบนหน้าจอถูกบันทึกใน DB แล้วหรือยัง (กัน publish ซ้ำ)
+const questionsPersisted = ref(Boolean(draftExamId.value))
+
+const showImportModal = ref(false)
+const importInputRef = ref(null)
+const importFile = ref(null)
+const importFileName = ref('')
+const importBusy = ref(false)
+const importError = ref('')
+const importRowErrors = ref([])
+const importPreview = ref(null)
+const importResult = ref(null)
 
 const typeOptions = QUESTION_TYPES
 const thaiLabels = ['ก.', 'ข.', 'ค.', 'ง.', 'จ.', 'ฉ.']
@@ -1012,28 +1151,107 @@ onMounted(async () => {
         metadata.title = remoteExam.title || metadata.title
         metadata.durationMinutes = remoteExam.timeLimitMinutes || metadata.durationMinutes
         if (remoteExam.questions && remoteExam.questions.length > 0) {
-          questions.value = remoteExam.questions.map((q, idx) => ({
-            id: q.id,
-            type: q.type === 'MULTIPLE_CHOICE' ? 'choice' : q.type === 'SHORT_ANSWER' ? 'short_answer' : 'essay',
-            typeName: q.type === 'MULTIPLE_CHOICE' ? 'ปรนัย (Multiple Choice)' : q.type === 'SHORT_ANSWER' ? 'ตอบสั้น (Short Answer)' : 'เขียนบรรยาย (Essay with Rubric)',
-            score: q.points || 1,
-            prompt: q.prompt,
-            choices: q.choices?.map((c) => ({
-              id: c.id,
-              label: c.label || thaiLabels[idx] || 'ก.',
-              text: c.text,
-              isCorrect: !!c.isCorrect
-            })),
-            acceptableKeys: q.referenceText ? [q.referenceText] : ['คำตอบ'],
-            caseInsensitive: true
-          }))
+          questions.value = remoteExam.questions.map(mapRemoteQuestion)
         }
+        questionsPersisted.value = true
       }
     } catch (err) {
       console.warn('Backend load note:', err.message)
     }
   }
+
+  // มาจากปุ่ม "นำเข้า" ในหน้าคลังข้อสอบ → เปิดโมดัลนำเข้าให้เลย
+  if (route.query.import === '1') {
+    handleImportFile()
+  }
 })
+
+// ---------------------------------------------------------------------------
+// นำเข้าข้อสอบจากไฟล์ (CSV / Excel)
+// ---------------------------------------------------------------------------
+
+const IMPORT_TYPE_LABELS = {
+  MULTIPLE_CHOICE: 'ปรนัย',
+  SHORT_ANSWER: 'ตอบสั้น',
+  LONG_ANSWER: 'บรรยาย'
+}
+
+const importPreviewTypeLabel = (type) => IMPORT_TYPE_LABELS[type] ?? type
+
+/** แปลงคำถามจาก backend → รูปแบบที่หน้าจอใช้ */
+const mapRemoteQuestion = (q, idx) => ({
+  id: q.id,
+  type: q.type === 'MULTIPLE_CHOICE' ? 'choice' : q.type === 'SHORT_ANSWER' ? 'short_answer' : 'essay',
+  typeName:
+    q.type === 'MULTIPLE_CHOICE'
+      ? 'ปรนัย (Multiple Choice)'
+      : q.type === 'SHORT_ANSWER'
+        ? 'ตอบสั้น (Short Answer)'
+        : 'เขียนบรรยาย (Essay with Rubric)',
+  score: q.points || 1,
+  prompt: q.prompt,
+  choices: q.choices?.map((c) => ({
+    id: c.id,
+    label: c.label || thaiLabels[idx] || 'ก.',
+    text: c.text,
+    isCorrect: !!c.isCorrect
+  })),
+  acceptableKeys: q.referenceText ? [q.referenceText] : ['คำตอบ'],
+  caseInsensitive: true
+})
+
+const localQuestionType = (q) =>
+  q.type === 'choice' || q.type === 'true_false'
+    ? 'MULTIPLE_CHOICE'
+    : q.type === 'short_answer'
+      ? 'SHORT_ANSWER'
+      : 'LONG_ANSWER'
+
+/** บันทึกคำถาม 1 ข้อจากหน้าจอลง DB */
+const persistQuestion = (examId, q) =>
+  examService.addQuestion(examId, {
+    type: localQuestionType(q),
+    prompt: q.prompt,
+    points: Number(q.score) || 1,
+    ...(q.choices
+      ? {
+          choices: q.choices.map((c, i) => ({
+            label: c.label || thaiLabels[i] || 'ก.',
+            text: c.text,
+            isCorrect: !!c.isCorrect,
+            order: i
+          }))
+        }
+      : {})
+  })
+
+/**
+ * ตรวจว่ามีชุดข้อสอบให้ผูกแล้วหรือยัง — ถ้ายัง จะสร้างเป็น "ฉบับร่าง" พร้อมบันทึกคำถามบนหน้าจอลง DB ก่อน
+ * (นำเข้าไฟล์ได้เฉพาะชุดสถานะ DRAFT เท่านั้น จึงต้องมีชุดข้อสอบก่อน)
+ */
+const ensureDraftExam = async () => {
+  if (draftExamId.value) return draftExamId.value
+
+  const created = await examService.createExam({
+    title: metadata.title,
+    timeLimitMinutes: Number(metadata.durationMinutes) || null
+  })
+  if (!created?.id) throw new Error('บันทึกชุดข้อสอบฉบับร่างไม่สำเร็จ')
+
+  draftExamId.value = created.id
+  router.replace({ query: { ...route.query, id: created.id } })
+
+  for (const q of questions.value) await persistQuestion(created.id, q)
+  questionsPersisted.value = true
+
+  return created.id
+}
+
+/** ดึงคำถามล่าสุดจาก backend มาแทนที่รายการบนหน้าจอ */
+const reloadQuestionsFromServer = async (examId) => {
+  const remote = await examService.getExamDetail(examId)
+  if (remote?.questions) questions.value = remote.questions.map(mapRemoteQuestion)
+}
 
 const handleAutoSave = () => {
   metadata.lastSavedText = 'บันทึกร่างอัตโนมัติเมื่อสักครู่'
@@ -1041,38 +1259,25 @@ const handleAutoSave = () => {
 
 const handlePublish = async () => {
   try {
-    const examId = route.query.id
-    if (examId && typeof examId === 'string' && examId.length > 10) {
-      await examService.publishExam(examId)
-    } else {
-      // Create new exam on backend
+    let examId = draftExamId.value
+    if (!examId) {
       const created = await examService.createExam({
         title: metadata.title,
-        timeLimitMinutes: metadata.durationMinutes
+        timeLimitMinutes: Number(metadata.durationMinutes) || null
       })
-      if (created?.id) {
-        // Save questions
-        for (const q of questions.value) {
-          const type = q.type === 'choice' || q.type === 'true_false'
-            ? 'MULTIPLE_CHOICE'
-            : q.type === 'short_answer'
-              ? 'SHORT_ANSWER'
-              : 'LONG_ANSWER'
-          await examService.addQuestion(created.id, {
-            type,
-            prompt: q.prompt,
-            points: Number(q.score) || 1,
-            choices: q.choices?.map((c, i) => ({
-              label: c.label || thaiLabels[i] || 'ก.',
-              text: c.text,
-              isCorrect: !!c.isCorrect,
-              order: i
-            }))
-          })
-        }
-        await examService.publishExam(created.id)
-      }
+      if (!created?.id) throw new Error('สร้างชุดข้อสอบไม่สำเร็จ')
+      examId = created.id
+      draftExamId.value = examId
     }
+
+    // ถ้าคำถามบนหน้าจอยังไม่ถูกบันทึก (ชุดใหม่) ให้บันทึกก่อนเผยแพร่
+    if (!questionsPersisted.value) {
+      for (const q of questions.value) await persistQuestion(examId, q)
+      questionsPersisted.value = true
+    }
+
+    await examService.publishExam(examId)
+
     alert(`บันทึกและเผยแพร่ชุดข้อสอบ "${metadata.title}" เรียบร้อยแล้ว!\nจำนวนข้อสอบ: ${questions.value.length} ข้อ\nคะแนนรวม: ${currentTotalScore.value}/${metadata.targetScore} คะแนน`)
     router.push('/teacher/exams')
   } catch (err) {
@@ -1089,7 +1294,112 @@ const handleEditRubric = () => {
 }
 
 const handleImportFile = () => {
-  alert('เปิดหน้าต่างนำเข้าข้อสอบจากไฟล์ Word (.docx), Excel (.xlsx), หรือ CSV')
+  resetImportState()
+  showImportModal.value = true
+}
+
+const onImportFileChange = (event) => {
+  const file = event.target.files?.[0] ?? null
+  importError.value = ''
+  importRowErrors.value = []
+  importPreview.value = null
+  importResult.value = null
+
+  if (!file) {
+    importFile.value = null
+    importFileName.value = ''
+    return
+  }
+
+  const dotIndex = file.name.lastIndexOf('.')
+  const ext = dotIndex === -1 ? '' : file.name.slice(dotIndex).toLowerCase()
+  if (!['.csv', '.xlsx'].includes(ext)) {
+    importFile.value = null
+    importFileName.value = ''
+    importError.value = 'รองรับเฉพาะไฟล์ .csv และ .xlsx เท่านั้น'
+    if (importInputRef.value) importInputRef.value.value = ''
+    return
+  }
+
+  importFile.value = file
+  importFileName.value = file.name
+}
+
+const resetImportState = () => {
+  importFile.value = null
+  importFileName.value = ''
+  importError.value = ''
+  importRowErrors.value = []
+  importPreview.value = null
+  importResult.value = null
+  if (importInputRef.value) importInputRef.value.value = ''
+}
+
+const downloadImportTemplate = async () => {
+  try {
+    await examService.downloadQuestionTemplate()
+  } catch (err) {
+    importError.value = err?.message || 'ดาวน์โหลดแม่แบบไม่สำเร็จ'
+  }
+}
+
+const handleImportFailure = (err) => {
+  importError.value = err?.message || 'นำเข้าข้อสอบจากไฟล์ไม่สำเร็จ'
+  importRowErrors.value = Array.isArray(err?.details) ? err.details : []
+}
+
+const previewImport = async () => {
+  if (!importFile.value) {
+    importError.value = 'กรุณาเลือกไฟล์ก่อนพรีวิว'
+    return
+  }
+  importBusy.value = true
+  importError.value = ''
+  importRowErrors.value = []
+  importPreview.value = null
+  importResult.value = null
+  try {
+    const examId = await ensureDraftExam()
+    importPreview.value = await examService.importQuestionsFromFile(examId, importFile.value, {
+      dryRun: true
+    })
+  } catch (err) {
+    handleImportFailure(err)
+  } finally {
+    importBusy.value = false
+  }
+}
+
+const confirmImport = async () => {
+  if (!importFile.value) {
+    importError.value = 'กรุณาเลือกไฟล์ก่อนนำเข้า'
+    return
+  }
+  importBusy.value = true
+  importError.value = ''
+  importRowErrors.value = []
+  importPreview.value = null
+  importResult.value = null
+  try {
+    const examId = await ensureDraftExam()
+    const result = await examService.importQuestionsFromFile(examId, importFile.value, {
+      dryRun: false
+    })
+    importResult.value = result
+    await reloadQuestionsFromServer(examId)
+    importFile.value = null
+    importFileName.value = ''
+    if (importInputRef.value) importInputRef.value.value = ''
+  } catch (err) {
+    handleImportFailure(err)
+  } finally {
+    importBusy.value = false
+  }
+}
+
+const closeImportModal = () => {
+  if (importBusy.value) return
+  showImportModal.value = false
 }
 
 const handleImportBank = () => {

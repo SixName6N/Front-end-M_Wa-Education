@@ -1,4 +1,4 @@
-import { apiClient, API_BASE_URL, getAccessToken } from './apiClient'
+import { apiClient, API_BASE_URL, getAccessToken, ApiError } from './apiClient'
 
 /**
  * Service ฝั่งครูสำหรับจัดการคลังข้อสอบและชุดข้อสอบ
@@ -196,19 +196,29 @@ export const examService = {
    * @param {string} examId
    * @param {File} file
    * @param {Object} [options] - { dryRun?: boolean }
+   * @returns {Promise<Object>} ผลลัพธ์จาก backend (dryRun จะได้ preview, นำเข้าจริงจะได้ questions)
+   * @throws {ApiError} 400 พร้อม details = [{ row, message }] เมื่อไฟล์มีแถวผิด
    */
   async importQuestionsFromFile(examId, file, { dryRun = false } = {}) {
     const token = getAccessToken()
     const formData = new FormData()
     formData.append('file', file)
-    const response = await fetch(`${API_BASE_URL}/exams/${examId}/questions/import?dryRun=${dryRun}`, {
-      method: 'POST',
-      headers: (token ? { Authorization: `Bearer ${token}` } : {}),
-      body: formData
-    })
-    const payload = await response.json()
+    const response = await fetch(
+      `${API_BASE_URL}/exams/${examId}/questions/import?dryRun=${dryRun}`,
+      {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      }
+    )
+    const payload = await response.json().catch(() => null)
     if (!response.ok) {
-      throw new Error(payload?.error?.message || 'นำเข้าข้อสอบจากไฟล์ไม่สำเร็จ')
+      const error = payload?.error ?? {}
+      throw new ApiError(error.message || 'นำเข้าข้อสอบจากไฟล์ไม่สำเร็จ', {
+        status: response.status,
+        code: error.code ?? null,
+        details: error.details ?? null
+      })
     }
     return payload
   }
