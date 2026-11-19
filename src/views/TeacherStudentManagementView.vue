@@ -103,13 +103,13 @@ function clearPageError() {
   pageErrorStatus.value = 0
 }
 
-/** ตัวเลือกห้องเรียนใน dropdown — ใช้ชื่อ + รหัสวิชา + จำนวนนักเรียนจริง */
+/** ตัวเลือกห้องเรียน — ส่งชื่อห้อง (แยกชั้น/ห้องเองในตัวเลือก) + จำนวนนักเรียนจริง */
 const roomOptions = computed(() =>
-  classrooms.value.map((room) => {
-    const count = room._count?.enrollments ?? 0
-    const course = room.course?.code ? ` · ${room.course.code}` : ''
-    return { id: room.id, label: `${room.name}${course} (${count} คน)` }
-  })
+  classrooms.value.map((room) => ({
+    id: room.id,
+    name: room.name,
+    count: room._count?.enrollments ?? 0
+  }))
 )
 
 /** metric pills นับจากรายชื่อที่โหลดมาจริง */
