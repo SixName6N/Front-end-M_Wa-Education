@@ -5,7 +5,7 @@
       <div class="student-navbar__inner">
         <!-- Left: Logo & Menus -->
         <div class="student-navbar__left">
-          <router-link to="/student/exams" class="student-navbar__brand">
+          <router-link to="/" class="student-navbar__brand">
             <div class="student-navbar__logo">
               <IconExamHub size="18" />
             </div>

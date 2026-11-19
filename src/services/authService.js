@@ -79,8 +79,3 @@ export const authService = {
 export function hasStoredSession() {
   return Boolean(getAccessToken() || getRefreshToken())
 }
-
-/** ล้าง token ในเครื่อง (ใช้เมื่อ token หมดอายุ/ไม่ถูกต้อง) */
-export function clearStoredSession() {
-  clearTokens()
-}
