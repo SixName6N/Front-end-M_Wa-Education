@@ -58,9 +58,12 @@ export function useAuth() {
   const handleSSO = async (provider) => {
     try {
       await authStore.ssoLogin(provider)
-      alert(`กำลังเชื่อมต่อไปยัง ${provider === 'google' ? 'Google Workspace for Education' : 'ระบบดิจิทัลภาครัฐ (D.DOPA)'}`)
+      loginSuccessMessage.value = `กำลังเชื่อมต่อไปยัง ${provider === 'google' ? 'Google Workspace for Education' : 'ระบบดิจิทัลภาครัฐ (D.DOPA)'}`
     } catch (err) {
-      console.error(err)
+      console.error('รายละเอียดข้อผิดพลาด SSO Login (Console Only):', err)
+      if (authStore) {
+        authStore.error = 'ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ กรุณาลองใหม่อีกครั้ง'
+      }
     }
   }
 

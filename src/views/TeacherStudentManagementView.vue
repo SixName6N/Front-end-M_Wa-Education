@@ -9,21 +9,36 @@
         :loading="loadingClassrooms"
       />
 
-      <!-- Page-level feedback: แสดงรหัส HTTP เมื่อโหลดไม่สำเร็จ -->
+      <!-- Page-level feedback: แสดงการแจ้งเตือนและข้อผิดพลาด -->
       <AppStateNotice
         v-if="pageError"
         variant="error"
         :code="pageErrorCode"
-        title="โหลดข้อมูลไม่สำเร็จ"
+        title="เกิดข้อผิดพลาด"
         :message="pageError"
         retry-label="ลองใหม่"
         @retry="retryLoad"
+      />
+      <AppStateNotice
+        v-else-if="pageSuccess"
+        variant="info"
+        title="ดำเนินการสำเร็จ"
+        :message="pageSuccess"
       />
       <AppStateNotice
         v-else-if="noClassrooms"
         variant="empty"
         title="ยังไม่มีข้อมูลห้องเรียน"
         message="ยังไม่มีห้องเรียนในระบบ — สร้างห้องเรียนก่อนแล้วจึงเพิ่มนักเรียนได้"
+      />
+
+      <!-- Hidden file input for CSV import -->
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept=".csv"
+        style="display: none;"
+        @change="onFileSelected"
       />
 
       <!-- Main Workspace: Table (Left 8 cols) + Add Form (Right 4 cols) -->
@@ -34,7 +49,7 @@
             :students="filteredStudents"
             v-model:search-query="searchQuery"
             :total-count="students.length"
-            :loading="loadingStudents"
+            :loading="loadingStudents || importingCsv"
             @import-csv="handleImportCsv"
             @export-data="handleExportData"
             @manage-student="handleRemoveStudent"
@@ -78,9 +93,12 @@ const searchQuery = ref('')
 const loadingClassrooms = ref(false)
 const loadingStudents = ref(false)
 const savingStudent = ref(false)
+const importingCsv = ref(false)
+const fileInputRef = ref(null)
 
 const pageError = ref('')
 const pageErrorStatus = ref(0)
+const pageSuccess = ref('')
 const formError = ref('')
 const formErrorStatus = ref(0)
 const formSuccess = ref(null)
@@ -103,13 +121,13 @@ function clearPageError() {
   pageErrorStatus.value = 0
 }
 
-/** ตัวเลือกห้องเรียนใน dropdown — ใช้ชื่อ + รหัสวิชา + จำนวนนักเรียนจริง */
+/** ตัวเลือกห้องเรียน — ส่งชื่อห้อง (แยกชั้น/ห้องเองในตัวเลือก) + จำนวนนักเรียนจริง */
 const roomOptions = computed(() =>
-  classrooms.value.map((room) => {
-    const count = room._count?.enrollments ?? 0
-    const course = room.course?.code ? ` · ${room.course.code}` : ''
-    return { id: room.id, label: `${room.name}${course} (${count} คน)` }
-  })
+  classrooms.value.map((room) => ({
+    id: room.id,
+    name: room.name,
+    count: room._count?.enrollments ?? 0
+  }))
 )
 
 /** metric pills นับจากรายชื่อที่โหลดมาจริง */
@@ -265,34 +283,80 @@ function clearFormFeedback() {
 }
 
 function handleImportCsv() {
-  alert('เปิดหน้าต่างนำเข้าไฟล์ CSV รายชื่อนักเรียน')
+  if (!selectedRoomId.value) {
+    pageError.value = 'กรุณาเลือกห้องเรียนก่อนนำเข้าไฟล์ CSV'
+    return
+  }
+  fileInputRef.value?.click()
+}
+
+async function onFileSelected(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  // ล้างค่าเพื่อให้เลือกไฟล์เดิมซ้ำได้ถ้าต้องการ
+  event.target.value = ''
+
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    pageError.value = 'กรุณาเลือกไฟล์นามสกุล .csv เท่านั้น'
+    pageSuccess.value = ''
+    return
+  }
+
+  importingCsv.value = true
+  pageError.value = ''
+  pageSuccess.value = ''
+
+  try {
+    const result = await studentService.importStudentsCsv(selectedRoomId.value, file)
+    pageSuccess.value = result?.message || `นำเข้ารายชื่อนักเรียนจากไฟล์ "${file.name}" สำเร็จ`
+
+    // โหลดรายชื่อจริงจากฐานข้อมูลหลังบันทึกเสร็จ (ไม่มีการ mock)
+    await loadStudents()
+    await loadClassrooms({ silent: true })
+  } catch (error) {
+    console.error('รายละเอียดข้อผิดพลาดการนำเข้าไฟล์ CSV (Console Only):', error.technical || error.message || error)
+    pageError.value = 'นำเข้าข้อมูลไม่สำเร็จ'
+  } finally {
+    importingCsv.value = false
+  }
 }
 
 async function handleExportData() {
   if (!selectedRoomId.value) {
-    alert('กรุณาเลือกห้องเรียนก่อนส่งออกข้อมูล')
+    pageError.value = 'กรุณาเลือกห้องเรียนก่อนส่งออกข้อมูล'
+    pageSuccess.value = ''
     return
   }
   const currentRoom = classrooms.value.find((r) => r.id === selectedRoomId.value)
   const roomName = currentRoom?.name || 'classroom'
   try {
     await studentService.exportClassroomStudentsCsv(selectedRoomId.value, roomName)
+    pageSuccess.value = 'ส่งออกข้อมูลรายชื่อนักเรียนเรียบร้อยแล้ว'
+    pageError.value = ''
   } catch (error) {
-    alert(error.message || 'ส่งออกข้อมูลรายชื่อนักเรียนไม่สำเร็จ')
+    console.error('รายละเอียดข้อผิดพลาดการส่งออกข้อมูล (Console Only):', error.technical || error.message || error)
+    pageError.value = 'ส่งออกข้อมูลรายชื่อนักเรียนไม่สำเร็จ'
+    pageSuccess.value = ''
   }
 }
 
 async function handleDownloadTemplate() {
   try {
     await studentService.downloadTemplate()
+    pageSuccess.value = 'ดาวน์โหลดแม่แบบ CSV เรียบร้อยแล้ว'
+    pageError.value = ''
   } catch (error) {
-    alert(error.message || 'ดาวน์โหลดแม่แบบไม่สำเร็จ')
+    console.error('รายละเอียดข้อผิดพลาดการดาวน์โหลดแม่แบบ (Console Only):', error.technical || error.message || error)
+    pageError.value = 'ดาวน์โหลดแม่แบบไม่สำเร็จ'
+    pageSuccess.value = ''
   }
 }
 
 watch(selectedRoomId, () => {
   formError.value = ''
   formSuccess.value = null
+  pageSuccess.value = ''
   loadStudents()
 })
 

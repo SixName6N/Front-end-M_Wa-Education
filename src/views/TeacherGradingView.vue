@@ -122,6 +122,28 @@
 
       <!-- Content State -->
       <template v-else>
+        <!-- Page Action Feedback Banner -->
+        <div
+          v-if="pageFeedback.message"
+          class="grading-warning-banner p-4 mb-4 rounded-lg flex items-center justify-between"
+          :class="pageFeedback.type === 'error' ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800'"
+          role="alert"
+        >
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px]" :class="pageFeedback.type === 'error' ? 'text-red-600' : 'text-emerald-600'">
+              {{ pageFeedback.type === 'error' ? 'error' : 'check_circle' }}
+            </span>
+            <span>{{ pageFeedback.message }}</span>
+          </div>
+          <button
+            type="button"
+            class="text-sm font-semibold hover:opacity-80"
+            @click="pageFeedback.message = ''"
+          >
+            ✕
+          </button>
+        </div>
+
         <!-- Partial Load Warning Alert -->
         <div
           v-if="loadWarningMessage"
@@ -202,7 +224,7 @@
             </div>
 
             <!-- Start Grading CTA Button -->
-            <div>
+            <div class="grading-card-actions">
               <button
                 v-if="exam.loadFailed"
                 type="button"
@@ -220,6 +242,16 @@
               >
                 <span>เริ่มตรวจและให้คะแนนนักเรียน</span>
                 <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+              <button
+                v-if="!exam.loadFailed"
+                type="button"
+                class="grading-btn-action-sm grading-btn-action-sm--danger"
+                :disabled="gradingActionLoading"
+                @click="handleCloseExam(exam.id)"
+              >
+                <span class="material-symbols-outlined text-[14px]">lock</span>
+                <span>ปิดชุดข้อสอบ</span>
               </button>
             </div>
           </article>
@@ -264,7 +296,7 @@
               </div>
 
               <!-- View Score Button -->
-              <div>
+              <div class="grading-card-actions">
                 <button
                   type="button"
                   class="grading-view-scores-btn"
@@ -272,6 +304,15 @@
                 >
                   <span class="material-symbols-outlined text-[16px]">visibility</span>
                   <span>ดูคะแนนนักเรียน</span>
+                </button>
+                <button
+                  type="button"
+                  class="grading-btn-action-sm grading-btn-action-sm--danger"
+                  :disabled="gradingActionLoading"
+                  @click="handleCloseExam(exam.id)"
+                >
+                  <span class="material-symbols-outlined text-[14px]">lock</span>
+                  <span>ปิดชุดข้อสอบ</span>
                 </button>
               </div>
             </article>
@@ -332,6 +373,28 @@
               @click="closeGradingModal"
             >
               <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+
+          <!-- Inline Modal Feedback -->
+          <div
+            v-if="modalFeedback.message"
+            class="p-3 mx-6 mt-4 rounded-lg flex items-center justify-between text-sm"
+            :class="modalFeedback.type === 'error' ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800'"
+            role="alert"
+          >
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]" :class="modalFeedback.type === 'error' ? 'text-red-600' : 'text-emerald-600'">
+                {{ modalFeedback.type === 'error' ? 'error' : 'check_circle' }}
+              </span>
+              <span>{{ modalFeedback.message }}</span>
+            </div>
+            <button
+              type="button"
+              class="text-xs font-semibold hover:opacity-80"
+              @click="modalFeedback.message = ''"
+            >
+              ✕
             </button>
           </div>
 
@@ -552,6 +615,26 @@
               <span>ปล่อยผลสอบทั้งชุดให้นักเรียนทุกคน</span>
             </button>
             <button
+              v-if="!selectedSubmissionDetail"
+              type="button"
+              class="grading-btn-action-sm grading-btn-action-sm--ghost"
+              :disabled="gradingActionLoading"
+              @click="handleExportResults(activeGradingExam.id, activeGradingExam.title)"
+            >
+              <span class="material-symbols-outlined text-[16px]">download</span>
+              <span>ส่งออกผลคะแนน (CSV)</span>
+            </button>
+            <button
+              v-if="!selectedSubmissionDetail"
+              type="button"
+              class="grading-btn-action-sm grading-btn-action-sm--danger"
+              :disabled="gradingActionLoading"
+              @click="handleCloseExam(activeGradingExam.id)"
+            >
+              <span class="material-symbols-outlined text-[16px]">lock</span>
+              <span>ปิดชุดข้อสอบ</span>
+            </button>
+            <button
               type="button"
               class="grading-view-scores-btn"
               @click="closeGradingModal"
@@ -583,6 +666,28 @@
             </button>
           </div>
 
+          <!-- Inline Modal Feedback -->
+          <div
+            v-if="modalFeedback.message"
+            class="p-3 mx-6 mt-4 rounded-lg flex items-center justify-between text-sm"
+            :class="modalFeedback.type === 'error' ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800'"
+            role="alert"
+          >
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]" :class="modalFeedback.type === 'error' ? 'text-red-600' : 'text-emerald-600'">
+                {{ modalFeedback.type === 'error' ? 'error' : 'check_circle' }}
+              </span>
+              <span>{{ modalFeedback.message }}</span>
+            </div>
+            <button
+              type="button"
+              class="text-xs font-semibold hover:opacity-80"
+              @click="modalFeedback.message = ''"
+            >
+              ✕
+            </button>
+          </div>
+
           <div class="grading-modal-body">
             <div class="grading-modal-stat-grid">
               <div class="grading-modal-stat-box">
@@ -600,6 +705,15 @@
           </div>
 
           <div class="grading-modal-footer">
+            <button
+              type="button"
+              class="grading-btn-action-sm grading-btn-action-sm--ghost"
+              :disabled="gradingActionLoading"
+              @click="handleExportResults(selectedExamForScores.id, selectedExamForScores.title)"
+            >
+              <span class="material-symbols-outlined text-[16px]">download</span>
+              <span>ส่งออกผลคะแนน (CSV)</span>
+            </button>
             <button
               type="button"
               class="grading-view-scores-btn"
@@ -685,7 +799,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
 import { examService } from '@/services/examService'
 import { gradingService } from '@/services/gradingService'
@@ -700,6 +814,20 @@ const completedExams = ref([])
 const loading = ref(false)
 const fetchError = ref('')
 const loadWarningMessage = ref('')
+
+// Page & Modal Inline Feedback
+const pageFeedback = reactive({ message: '', type: 'error' })
+const modalFeedback = reactive({ message: '', type: 'error' })
+
+function setFeedback(msg, type = 'error') {
+  if (activeGradingExam.value || selectedExamForScores.value) {
+    modalFeedback.message = msg
+    modalFeedback.type = type
+  } else {
+    pageFeedback.message = msg
+    pageFeedback.type = type
+  }
+}
 
 // Real Grading Flow States
 const activeGradingExam = ref(null)
@@ -887,12 +1015,15 @@ async function startGrading(exam) {
   activeGradingExam.value = exam
   selectedSubmissionDetail.value = null
   loadingSubmissions.value = true
+  modalFeedback.message = ''
 
   try {
     const list = await gradingService.listExamSubmissions(exam.id)
     gradingSubmissions.value = list
   } catch (err) {
-    alert(err.message || 'ไม่สามารถโหลดรายการส่งข้อสอบได้')
+    console.error('รายละเอียดข้อผิดพลาดโหลดรายการส่งข้อสอบ (Console Only):', err.technical || err.message || err)
+    modalFeedback.message = 'ไม่สามารถโหลดรายการส่งข้อสอบได้ กรุณาลองใหม่อีกครั้ง'
+    modalFeedback.type = 'error'
     gradingSubmissions.value = []
   } finally {
     loadingSubmissions.value = false
@@ -903,6 +1034,7 @@ function closeGradingModal() {
   activeGradingExam.value = null
   selectedSubmissionDetail.value = null
   gradingSubmissions.value = []
+  modalFeedback.message = ''
 }
 
 /**
@@ -910,11 +1042,14 @@ function closeGradingModal() {
  */
 async function openStudentSubmission(submission) {
   loadingSubmissions.value = true
+  modalFeedback.message = ''
   try {
     const detail = await gradingService.getSubmissionDetail(submission.id)
     selectedSubmissionDetail.value = detail
   } catch (err) {
-    alert(err.message || 'ไม่สามารถโหลดคำตอบของนักเรียนได้')
+    console.error('รายละเอียดข้อผิดพลาดโหลดคำตอบของนักเรียน (Console Only):', err.technical || err.message || err)
+    modalFeedback.message = 'ไม่สามารถโหลดคำตอบของนักเรียนได้'
+    modalFeedback.type = 'error'
   } finally {
     loadingSubmissions.value = false
   }
@@ -931,6 +1066,7 @@ function setAnswerCorrectness(answer, isCorrect) {
 async function saveAnswerGrade(answer) {
   if (!selectedSubmissionDetail.value) return
   gradingActionLoading.value = true
+  modalFeedback.message = ''
 
   try {
     const updated = await gradingService.gradeAnswer(answer.id, {
@@ -947,8 +1083,12 @@ async function saveAnswerGrade(answer) {
     if (activeGradingExam.value) {
       gradingSubmissions.value = await gradingService.listExamSubmissions(activeGradingExam.value.id)
     }
+    modalFeedback.message = 'บันทึกคะแนนข้อนี้สำเร็จ'
+    modalFeedback.type = 'success'
   } catch (err) {
-    alert(err.message || 'บันทึกคะแนนข้อนี้ไม่สำเร็จ')
+    console.error('รายละเอียดข้อผิดพลาดบันทึกคะแนน (Console Only):', err.technical || err.message || err)
+    modalFeedback.message = 'บันทึกคะแนนข้อนี้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+    modalFeedback.type = 'error'
   } finally {
     gradingActionLoading.value = false
   }
@@ -959,6 +1099,7 @@ async function saveAnswerGrade(answer) {
  */
 async function handleReleaseSubmission(submissionId) {
   gradingActionLoading.value = true
+  modalFeedback.message = ''
   try {
     await gradingService.releaseSubmission(submissionId)
     // Reload details and list
@@ -967,8 +1108,12 @@ async function handleReleaseSubmission(submissionId) {
     }
     selectedSubmissionDetail.value = null
     await fetchGradingData()
+    modalFeedback.message = 'ส่งผลสอบให้นักเรียนเรียบร้อยแล้ว'
+    modalFeedback.type = 'success'
   } catch (err) {
-    alert(err.message || 'ส่งผลสอบให้นักเรียนไม่สำเร็จ')
+    console.error('รายละเอียดข้อผิดพลาดส่งผลสอบให้นักเรียน (Console Only):', err.technical || err.message || err)
+    modalFeedback.message = 'ส่งผลสอบให้นักเรียนไม่สำเร็จ'
+    modalFeedback.type = 'error'
   } finally {
     gradingActionLoading.value = false
   }
@@ -980,12 +1125,54 @@ async function handleReleaseSubmission(submissionId) {
 async function handleReleaseAllResults(examId) {
   if (!confirm('ยืนยันการปล่อยผลสอบทั้งชุดให้นักเรียนทุกคนที่ตรวจเสร็จแล้ว?')) return
   gradingActionLoading.value = true
+  modalFeedback.message = ''
   try {
     await gradingService.releaseExamResults(examId)
     gradingSubmissions.value = await gradingService.listExamSubmissions(examId)
     await fetchGradingData()
+    modalFeedback.message = 'ปล่อยผลสอบทั้งชุดให้นักเรียนทุกคนเรียบร้อยแล้ว'
+    modalFeedback.type = 'success'
   } catch (err) {
-    alert(err.message || 'ปล่อยผลสอบทั้งชุดไม่สำเร็จ')
+    console.error('รายละเอียดข้อผิดพลาดปล่อยผลสอบทั้งชุด (Console Only):', err.technical || err.message || err)
+    modalFeedback.message = 'ปล่อยผลสอบทั้งชุดไม่สำเร็จ'
+    modalFeedback.type = 'error'
+  } finally {
+    gradingActionLoading.value = false
+  }
+}
+
+/**
+ * ส่งออกผลคะแนนทั้งชุดเป็น CSV (เรียก API จริง)
+ */
+async function handleExportResults(examId, title) {
+  gradingActionLoading.value = true
+  try {
+    await gradingService.exportExamResultsCsv(examId, { title })
+    setFeedback('ส่งออกผลคะแนนเป็นไฟล์ CSV เรียบร้อยแล้ว', 'success')
+  } catch (err) {
+    console.error('รายละเอียดข้อผิดพลาดส่งออกผลคะแนน (Console Only):', err.technical || err.message || err)
+    setFeedback('ส่งออกผลคะแนนไม่สำเร็จ', 'error')
+  } finally {
+    gradingActionLoading.value = false
+  }
+}
+
+/**
+ * ปิดชุดข้อสอบ (เปลี่ยนสถานะเป็น CLOSED — นักเรียนเข้าสอบไม่ได้อีก)
+ */
+async function handleCloseExam(examId) {
+  if (!confirm('ยืนยันปิดชุดข้อสอบนี้? นักเรียนจะไม่สามารถเข้าสอบได้อีก')) return
+  gradingActionLoading.value = true
+  try {
+    await examService.closeExam(examId)
+    await fetchGradingData()
+    if (activeGradingExam.value?.id === examId) {
+      activeGradingExam.value = { ...activeGradingExam.value, status: 'CLOSED' }
+    }
+    setFeedback('ปิดชุดข้อสอบเรียบร้อยแล้ว', 'success')
+  } catch (err) {
+    console.error('รายละเอียดข้อผิดพลาดปิดชุดข้อสอบ (Console Only):', err.technical || err.message || err)
+    setFeedback('ปิดชุดข้อสอบไม่สำเร็จ', 'error')
   } finally {
     gradingActionLoading.value = false
   }

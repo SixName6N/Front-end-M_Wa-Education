@@ -8,26 +8,6 @@
           <AppBadge :dot="true">
             {{ appConfig.SESSION }}
           </AppBadge>
-
-          <div class="login-card__lang-toggle">
-            <button
-              type="button"
-              class="login-card__lang-btn"
-              :class="{ 'login-card__lang-btn--active': currentLang === 'th' }"
-              @click="setLanguage('th')"
-            >
-              ไทย
-            </button>
-            <span class="login-card__lang-sep">|</span>
-            <button
-              type="button"
-              class="login-card__lang-btn"
-              :class="{ 'login-card__lang-btn--active': currentLang === 'en' }"
-              @click="setLanguage('en')"
-            >
-              EN
-            </button>
-          </div>
         </div>
 
         <!-- Brand Header Section -->
@@ -88,25 +68,13 @@
             autocomplete="current-password"
           >
             <template #label-right>
-              <a
-                href="/forgot-password"
-                class="login-card__forgot-link"
-                @click.prevent="handleForgotPassword"
-              >
-                ลืมรหัสผ่าน?
-              </a>
+
             </template>
             <template #prefix>
               <IconLock size="18" />
             </template>
           </AppInput>
 
-          <!-- Remember Me Checkbox -->
-          <div class="login-card__options">
-            <AppCheckbox v-model="form.rememberMe">
-              จดจำการเข้าสู่ระบบบนอุปกรณ์นี้
-            </AppCheckbox>
-          </div>
 
           <!-- Submit Button -->
           <AppButton
@@ -125,39 +93,60 @@
         <!-- Registration & IT Support Footnote -->
         <div class="login-card__footer-notes">
           <p class="login-card__helpdesk-note">
-            หากพบปัญหาการใช้งาน ติดต่อฝ่ายทะเบียน-วัดผล หรือ IT Helpdesk
+            หากพบปัญหาการใช้งาน ติดต่อฝ่ายทะเบียน-วัดผล
           </p>
         </div>
       </div>
 
       <!-- Security & Exam Guide below the card -->
       <SecurityFooter @guide="handleOpenGuide" />
+
+      <!-- Exam Guide Modal -->
+      <div
+        v-if="showGuideModal"
+        class="login-guide-modal-overlay"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;"
+        @click.self="showGuideModal = false"
+      >
+        <div style="background: white; border-radius: 12px; max-width: 500px; width: 100%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">คู่มือการสอบ ExamHub</h3>
+            <button type="button" style="background:none; border:none; cursor:pointer; font-size: 20px; color: #64748b;" @click="showGuideModal = false">✕</button>
+          </div>
+          <div style="font-size: 14px; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
+            <p>1. เข้าสู่ระบบด้วยรหัสนักเรียนหรืออีเมลที่ได้รับจากทางโรงเรียน</p>
+            <p>2. ตรวจสอบรายชื่อชุดข้อสอบที่เปิดให้สอบในเมนู "รายการข้อสอบ"</p>
+            <p>3. หากเกิดปัญหาการเข้าสู่ระบบหรือลืมรหัสผ่าน กรุณาติดต่อครูผู้สอนหรือฝ่ายทะเบียน-วัดผล</p>
+          </div>
+          <div style="margin-top: 20px; text-align: right;">
+            <button type="button" style="background: #015b7e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;" @click="showGuideModal = false">
+              เข้าใจแล้ว
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </AuthLayout>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import AppBadge from '@/components/common/AppBadge.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppInput from '@/components/common/AppInput.vue'
-import AppCheckbox from '@/components/common/AppCheckbox.vue'
 import RoleSelector from '@/components/auth/RoleSelector.vue'
-import SocialAuth from '@/components/auth/SocialAuth.vue'
 import SecurityFooter from '@/components/auth/SecurityFooter.vue'
 import IconExamHub from '@/components/icons/IconExamHub.vue'
 import IconUser from '@/components/icons/IconUser.vue'
 import IconLock from '@/components/icons/IconLock.vue'
 import IconArrowRight from '@/components/icons/IconArrowRight.vue'
-
 import { APP_CONFIG } from '@/constants/app.constants'
 import { ROLE_CONFIG } from '@/constants/auth.constants'
 import { useAuth } from '@/composables/useAuth'
-import { useLanguage } from '@/composables/useLanguage'
 
 const appConfig = APP_CONFIG
-const { currentLang, setLanguage } = useLanguage()
+
 
 const {
   form,
@@ -167,23 +156,18 @@ const {
   loginSuccessMessage,
   handleRoleChange,
   handleLogin,
-  handleSSO
+
 } = useAuth()
 
 const currentRoleConfig = computed(() => {
   return ROLE_CONFIG[authStore.currentRole] || ROLE_CONFIG.student
 })
 
-const handleForgotPassword = () => {
-  alert('นำทางไปยังหน้ารีเซ็ตรหัสผ่าน')
-}
 
-const handleRegister = () => {
-  alert(`นำทางไปยังหน้าลงทะเบียน: ${currentRoleConfig.value.registerText}`)
-}
+const showGuideModal = ref(false)
 
 const handleOpenGuide = () => {
-  alert('เปิดคู่มือการสอบ ExamHub Assessment Guide')
+  showGuideModal.value = true
 }
 </script>
 

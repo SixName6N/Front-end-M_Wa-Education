@@ -18,8 +18,13 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-bottom: 16px;
   border-bottom: 1px solid rgba(226, 226, 226, 0.7);
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  border-radius:12px;
 }
 
 @media (min-width: 1024px) {
@@ -961,4 +966,39 @@
 .grading-btn-action-sm--primary:hover {
   background-color: #004d61;
   border-color: #004d61;
+}
+
+.grading-btn-action-sm--ghost {
+  background-color: #ffffff;
+  color: #015b7e;
+  border-color: #bae6fd;
+}
+
+.grading-btn-action-sm--ghost:hover {
+  background-color: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
+.grading-btn-action-sm--danger {
+  background-color: #ffffff;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.grading-btn-action-sm--danger:hover {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.grading-btn-action-sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.grading-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
 }
