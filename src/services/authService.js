@@ -44,6 +44,16 @@ export const authService = {
     return toUiUser(data.user)
   },
 
+  /**
+   * เปลี่ยนรหัสผ่านของบัญชีตัวเอง (นักเรียน/ครู/ผู้ดูแล)
+   * สำเร็จแล้ว backend จะเพิกถอน refresh token ทุกตัว แล้วคืนชุดใหม่ → เก็บทับของเดิม
+   */
+  async changePassword({ currentPassword, newPassword }) {
+    const { data } = await apiClient.patch('/auth/password', { currentPassword, newPassword })
+    setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
+    return { success: true, user: toUiUser(data.user) }
+  },
+
   /** ต่ออายุ session ด้วย refresh token ที่เก็บไว้ (token ถูก rotate) */
   async refresh() {
     const refreshToken = getRefreshToken()

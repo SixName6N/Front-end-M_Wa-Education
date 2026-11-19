@@ -29,6 +29,22 @@ const router = createRouter({
       }
     },
     {
+      path: '/student/exams/:examId/take',
+      name: 'student-exam-take',
+      component: () => import('@/views/StudentExamTakingView.vue'),
+      meta: {
+        title: 'ห้องสอบ (Exam Room) - ExamHub'
+      }
+    },
+    {
+      path: '/student/account',
+      name: 'student-account',
+      component: () => import('@/views/StudentAccountView.vue'),
+      meta: {
+        title: 'บัญชีของฉัน (My Account) - ExamHub'
+      }
+    },
+    {
       path: '/exams',
       redirect: '/student/exams'
     },
@@ -108,11 +124,10 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   if (to.meta.title) {
     document.title = to.meta.title
   }
-  next()
 })
 
 export default router

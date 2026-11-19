@@ -32,12 +32,32 @@
         message="ยังไม่มีห้องเรียนในระบบ — สร้างห้องเรียนก่อนแล้วจึงเพิ่มนักเรียนได้"
       />
 
-      <!-- Hidden file input for CSV import -->
+      <!-- ผลการรีเซ็ตรหัสผ่าน: โชว์รหัสใหม่ให้ครูคัดลอกส่งนักเรียน -->
+      <AppStateNotice
+        v-if="resetResult"
+        variant="info"
+        title="รีเซ็ตรหัสผ่านเรียบร้อย"
+        :message="`รหัสผ่านใหม่ของ ${resetResult.name} — ส่งให้ผู้เรียนแล้วให้เข้าไปเปลี่ยนเองที่เมนู “เปลี่ยนรหัสผ่าน” ในหน้าโปรไฟล์`"
+      >
+        <code class="student-mgmt-password">{{ resetResult.password }}</code>
+        <button type="button" class="student-mgmt-btn" @click="copyResetPassword">
+          {{ copiedPassword ? 'คัดลอกแล้ว ✓' : 'คัดลอกรหัสผ่าน' }}
+        </button>
+        <button
+          type="button"
+          class="student-mgmt-btn student-mgmt-btn--ghost"
+          @click="resetResult = null"
+        >
+          ปิด
+        </button>
+      </AppStateNotice>
+
+      <!-- Hidden file input สำหรับนำเข้ารายชื่อนักเรียนจาก CSV -->
       <input
         ref="fileInputRef"
         type="file"
-        accept=".csv"
-        style="display: none;"
+        accept=".csv,text/csv"
+        class="student-mgmt-file-input"
         @change="onFileSelected"
       />
 
@@ -49,10 +69,12 @@
             :students="filteredStudents"
             v-model:search-query="searchQuery"
             :total-count="students.length"
-            :loading="loadingStudents || importingCsv"
+            :loading="loadingStudents"
+            :busy-id="busyStudentId"
             @import-csv="handleImportCsv"
             @export-data="handleExportData"
             @manage-student="handleRemoveStudent"
+            @reset-password="handleResetPassword"
           />
         </div>
 
@@ -77,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
 import TeacherHeaderStats from '@/components/teacher/TeacherHeaderStats.vue'
 import StudentRosterTable from '@/components/teacher/StudentRosterTable.vue'
@@ -93,8 +115,6 @@ const searchQuery = ref('')
 const loadingClassrooms = ref(false)
 const loadingStudents = ref(false)
 const savingStudent = ref(false)
-const importingCsv = ref(false)
-const fileInputRef = ref(null)
 
 const pageError = ref('')
 const pageErrorStatus = ref(0)
@@ -102,6 +122,18 @@ const pageSuccess = ref('')
 const formError = ref('')
 const formErrorStatus = ref(0)
 const formSuccess = ref(null)
+
+/** ระหว่างรีเซ็ตรหัสผ่านนักเรียน (ปิดปุ่มกันกดซ้ำ) */
+const busyStudentId = ref('')
+/** ผลการรีเซ็ตรหัสผ่าน: { name, password } */
+const resetResult = ref(null)
+const copiedPassword = ref(false)
+let copyTimer = null
+
+/** hidden input สำหรับนำเข้ารายชื่อนักเรียนจากไฟล์ CSV */
+const fileInputRef = ref(null)
+/** ระหว่างนำเข้าไฟล์ CSV (กันกดซ้ำ) */
+const importingCsv = ref(false)
 
 /** แสดงรหัส HTTP ที่ backend ตอบกลับ เพื่อให้ debug ได้ง่าย */
 const pageErrorCode = computed(() =>
@@ -165,7 +197,7 @@ function toRosterRow(student, index) {
     name: student.fullName ?? '',
     email: student.email ?? '',
     isActive,
-    status: isActive ? 'graded' : 'unsubmitted',
+    status: isActive ? 'active' : 'suspended',
     statusText: isActive ? 'ใช้งาน' : 'ระงับการใช้งาน',
     actionText: 'นำออกจากห้อง'
   }
@@ -267,6 +299,63 @@ async function handleRemoveStudent(student) {
   }
 }
 
+/**
+ * รีเซ็ตรหัสผ่านให้นักเรียน (ครูเท่านั้น)
+ * ไม่ส่ง password ไป → backend สุ่มรหัสใหม่ 12 ตัวให้ แล้วโชว์ให้ครูคัดลอกส่งนักเรียน
+ */
+async function handleResetPassword(student) {
+  if (!selectedRoomId.value) return
+
+  const confirmed = window.confirm(
+    `รีเซ็ตรหัสผ่านให้ ${student.name}?\nรหัสผ่านเดิมจะใช้ไม่ได้ทันที และระบบจะสุ่มรหัสใหม่ให้`
+  )
+  if (!confirmed) return
+
+  busyStudentId.value = student.id
+  pageSuccess.value = ''
+  resetResult.value = null
+  clearPageError()
+
+  try {
+    const password = await studentService.resetStudentPassword(student.id)
+    resetResult.value = { name: student.name, password }
+  } catch (error) {
+    setPageError(error, 'รีเซ็ตรหัสผ่านไม่สำเร็จ')
+  } finally {
+    busyStudentId.value = ''
+  }
+}
+
+/** คัดลอกรหัสผ่านใหม่ไปคลิปบอร์ด (มี fallback สำหรับเบราว์เซอร์ที่บล็อก clipboard API) */
+async function copyResetPassword() {
+  const password = resetResult.value?.password
+  if (!password) return
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(password)
+    } else {
+      const area = document.createElement('textarea')
+      area.value = password
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      document.execCommand('copy')
+      area.remove()
+    }
+    copiedPassword.value = true
+    if (copyTimer) clearTimeout(copyTimer)
+    copyTimer = setTimeout(() => {
+      copiedPassword.value = false
+    }, 2000)
+  } catch (error) {
+    console.error('คัดลอกรหัสผ่านไม่สำเร็จ:', error)
+    setPageError(error, 'คัดลอกรหัสผ่านไม่สำเร็จ กรุณาคัดลอกจากข้อความโดยตรง')
+  }
+}
+
 /** ปุ่ม "ลองใหม่" บนกล่องแจ้ง error */
 function retryLoad() {
   if (classrooms.value.length === 0) {
@@ -356,11 +445,17 @@ async function handleDownloadTemplate() {
 watch(selectedRoomId, () => {
   formError.value = ''
   formSuccess.value = null
-  pageSuccess.value = ''
+  // เปลี่ยนห้อง → ซ่อนรหัสผ่านที่เพิ่งรีเซ็ตของนักเรียนห้องเดิม
+  resetResult.value = null
+  copiedPassword.value = false
   loadStudents()
 })
 
 onMounted(() => loadClassrooms())
+
+onBeforeUnmount(() => {
+  if (copyTimer) clearTimeout(copyTimer)
+})
 </script>
 
 <style scoped src="@/assets/styles/views/teacher-student-management.css"></style>

@@ -78,6 +78,15 @@
               <div class="student-profile-dropdown__divider"></div>
 
               <div class="student-profile-dropdown__menu">
+                <router-link
+                  to="/student/account"
+                  class="student-profile-dropdown__item"
+                  @click="isMenuOpen = false"
+                >
+                  <span class="material-symbols-outlined text-[18px]">key</span>
+                  <span>เปลี่ยนรหัสผ่าน</span>
+                </router-link>
+
                 <button
                   type="button"
                   class="student-profile-dropdown__item student-profile-dropdown__item--danger"

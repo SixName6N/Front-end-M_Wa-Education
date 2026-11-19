@@ -109,13 +109,24 @@
 
                 <!-- Actions -->
                 <td class="roster-table__manage">
-                  <button
-                    type="button"
-                    class="roster-btn-link roster-btn-link--danger"
-                    @click="$emit('manage-student', student)"
-                  >
-                    {{ student.actionText }}
-                  </button>
+                  <div class="roster-table__actions">
+                    <button
+                      type="button"
+                      class="roster-btn-link roster-btn-link--primary"
+                      :disabled="busyId === student.id"
+                      @click="$emit('reset-password', student)"
+                    >
+                      {{ busyId === student.id ? 'กำลังรีเซ็ต...' : 'รีเซ็ตรหัสผ่าน' }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="roster-btn-link roster-btn-link--danger"
+                      @click="$emit('manage-student', student)"
+                    >
+                      {{ student.actionText }}
+                    </button>
+                  </div>
                 </td>
               </tr>
             </template>
@@ -154,6 +165,11 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  /** id ของนักเรียนที่กำลังทำรายการอยู่ (ปิดปุ่มกันกดซ้ำ) */
+  busyId: {
+    type: String,
+    default: ''
   }
 })
 
@@ -161,7 +177,8 @@ defineEmits([
   'update:searchQuery',
   'import-csv',
   'export-data',
-  'manage-student'
+  'manage-student',
+  'reset-password'
 ])
 
 const selectedStudents = ref([])
