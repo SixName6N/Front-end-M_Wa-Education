@@ -376,7 +376,44 @@ function clearFormFeedback() {
 }
 
 function handleImportCsv() {
-  alert('เปิดหน้าต่างนำเข้าไฟล์ CSV รายชื่อนักเรียน')
+  if (!selectedRoomId.value) {
+    pageError.value = 'กรุณาเลือกห้องเรียนก่อนนำเข้าไฟล์ CSV'
+    return
+  }
+  fileInputRef.value?.click()
+}
+
+async function onFileSelected(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  // ล้างค่าเพื่อให้เลือกไฟล์เดิมซ้ำได้ถ้าต้องการ
+  event.target.value = ''
+
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    pageError.value = 'กรุณาเลือกไฟล์นามสกุล .csv เท่านั้น'
+    return
+  }
+
+  importingCsv.value = true
+  pageError.value = ''
+
+  try {
+    const result = await studentService.importStudentsCsv(selectedRoomId.value, file)
+    const successMsg = result?.message || `นำเข้ารายชื่อนักเรียนจากไฟล์ "${file.name}" สำเร็จ`
+    alert(successMsg)
+
+    // โหลดรายชื่อจริงจากฐานข้อมูลหลังบันทึกเสร็จ (ไม่มีการ mock)
+    await loadStudents()
+    await loadClassrooms({ silent: true })
+  } catch (error) {
+    console.error('รายละเอียดข้อผิดพลาดการนำเข้าไฟล์ CSV (Console Only):', error.technical || error.message || error)
+    const errorMsg = 'นำเข้าข้อมูลไม่สำเร็จ'
+    pageError.value = errorMsg
+    alert(errorMsg)
+  } finally {
+    importingCsv.value = false
+  }
 }
 
 async function handleExportData() {

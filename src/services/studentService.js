@@ -83,5 +83,36 @@ export const studentService = {
     a.click()
     a.remove()
     window.URL.revokeObjectURL(url)
+  },
+
+  /**
+   * นำเข้ารายชื่อนักเรียนเข้าห้องเรียนจากไฟล์ CSV
+   * @param {string} classroomId
+   * @param {File} file
+   */
+  async importStudentsCsv(classroomId, file) {
+    try {
+      const token = getAccessToken()
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch(`${API_BASE_URL}/classrooms/${classroomId}/students/import`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      })
+
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        const technicalDetail = payload?.error?.message || payload?.message || `HTTP ${response.status}`
+        const err = new Error('นำเข้าข้อมูลไม่สำเร็จ')
+        err.technical = technicalDetail
+        throw err
+      }
+      return payload
+    } catch (error) {
+      console.error('เกิดข้อผิดพลาดในการนำเข้าไฟล์ CSV (Technical):', error.technical || error.message, error)
+      throw error
+    }
   }
 }
