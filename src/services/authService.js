@@ -1,3 +1,4 @@
+import { toRaw } from 'vue';
 import { apiClient, clearTokens, getAccessToken, getRefreshToken, getRefreshedToken, setTokens } from './apiClient'
 
 /** role ฝั่ง frontend เป็นตัวพิมพ์เล็ก แต่ API ต้องการตัวพิมพ์ใหญ่ */
@@ -23,17 +24,15 @@ export const authService = {
    * รองรับทั้ง contract ใหม่ (identifier) และ email เดิม
    */
   async login({ identifier, password, role }) {
-    const trimmed = String(identifier || '').trim()
+    const raw = String(identifier || '').trim()
     const payload = {
+      email: raw, // ส่งเป็น email เพื่อให้ผ่าน Zod Schema ของ Backend ปัจจุบัน
+      identifier: raw,
       password,
       role: API_ROLE[role] || String(role || '').toUpperCase()
     }
 
-    if (trimmed.includes('@')) {
-      payload.email = trimmed
-    } else {
-      payload.identifier = trimmed
-    }
+
 
     const { data } = await apiClient.post('/auth/login', payload)
 

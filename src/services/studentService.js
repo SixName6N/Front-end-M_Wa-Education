@@ -87,33 +87,24 @@ export const studentService = {
   },
 
   /**
-   * นำเข้ารายชื่อนักเรียนเข้าห้องเรียนจากไฟล์ CSV
+   * นำเข้ารายชื่อนักเรียนเข้าห้องเรียนจากไฟล์ CSV / .xlsx
    * @param {string} classroomId
    * @param {File} file
+   * @param {Object} [options]
+   * @param {boolean} [options.dryRun=false] - ถ้า true จะตรวจไฟล์และพรีวิวโดยไม่บันทึกจริง
+   * @returns {Promise<Object>}
    */
-  async importStudentsCsv(classroomId, file) {
-    try {
-      const token = getAccessToken()
-      const formData = new FormData()
-      formData.append('file', file)
+  async importStudentsFile(classroomId, file, { dryRun = false } = {}) {
+    const formData = new FormData()
+    formData.append('file', file)
 
-      const response = await fetch(`${API_BASE_URL}/classrooms/${classroomId}/students/import`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData
-      })
+    const query = dryRun ? '?dryRun=true' : ''
+    const { data } = await apiClient.post(`/classrooms/${classroomId}/students/import${query}`, formData)
+    return data
+  },
 
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) {
-        const technicalDetail = payload?.error?.message || payload?.message || `HTTP ${response.status}`
-        const err = new Error('นำเข้าข้อมูลไม่สำเร็จ')
-        err.technical = technicalDetail
-        throw err
-      }
-      return payload
-    } catch (error) {
-      console.error('เกิดข้อผิดพลาดในการนำเข้าไฟล์ CSV (Technical):', error.technical || error.message, error)
-      throw error
-    }
+  /** alias สำหรับเข้ากันได้กับโค้ดเดิม */
+  importStudentsCsv(classroomId, file, options) {
+    return this.importStudentsFile(classroomId, file, options)
   }
 }

@@ -52,14 +52,268 @@
         </button>
       </AppStateNotice>
 
-      <!-- Hidden file input สำหรับนำเข้ารายชื่อนักเรียนจาก CSV -->
+      <!-- Hidden file input สำหรับนำเข้ารายชื่อนักเรียนจาก CSV / Excel -->
       <input
         ref="fileInputRef"
         type="file"
-        accept=".csv,text/csv"
+        accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         class="student-mgmt-file-input"
         @change="onFileSelected"
       />
+
+      <!-- Modal นำเข้ารายชื่อนักเรียน: 2-step (พรีวิว dryRun -> ยืนยันบันทึกจริงพร้อมรหัสผ่านชั่วคราว) -->
+      <div
+        v-if="showImportModal"
+        class="import-modal-overlay"
+        @click.self="handleCloseImportModal"
+      >
+        <div class="import-modal-box">
+          <!-- Header -->
+          <div class="import-modal-header">
+            <div>
+              <h3 class="import-modal-title">
+                {{ importStep === 'result' ? 'ผลการนำเข้ารายชื่อนักเรียน' : 'ตรวจสอบข้อมูลก่อนนำเข้า (พรีวิว)' }}
+              </h3>
+              <p class="import-modal-subtitle">
+                ห้องเรียน: <strong>{{ currentRoomName }}</strong> • ไฟล์: <strong>{{ selectedImportFileName }}</strong>
+              </p>
+            </div>
+            <button
+              type="button"
+              class="import-modal-close"
+              :disabled="importingCommit || importingPreview"
+              @click="handleCloseImportModal"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="import-modal-body">
+            <!-- Loading state: ตรวจสอบความถูกต้องของไฟล์แบบ dry-run -->
+            <div v-if="importingPreview" class="import-modal-loading">
+              <div class="import-spinner"></div>
+              <p>กำลังตรวจสอบความถูกต้องของไฟล์กับฐานข้อมูล...</p>
+            </div>
+
+            <!-- Error State: ไฟล์มีข้อผิดพลาด (all-or-nothing) -->
+            <div v-else-if="importError" class="import-modal-error-state">
+              <AppStateNotice
+                variant="error"
+                title="ไฟล์ไม่ผ่านการตรวจสอบ"
+                :message="importError"
+              />
+
+              <div v-if="importRowErrors.length > 0" class="import-error-table-wrapper">
+                <p class="import-error-lead">
+                  พบข้อผิดพลาดตามแถวดังต่อไปนี้ (ระบบยังไม่บันทึกข้อมูลใดๆ):
+                </p>
+                <div class="import-table-wrapper">
+                  <table class="import-table import-table--error">
+                    <thead>
+                      <tr>
+                        <th style="width: 80px;">แถวที่</th>
+                        <th>รายละเอียดข้อผิดพลาด</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(err, idx) in importRowErrors" :key="idx">
+                        <td class="import-error-row-num">{{ err.row }}</td>
+                        <td class="import-error-row-msg">{{ err.message }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preview State: ตรวจสอบผ่าน แสดงตัวเลขและรายชื่อที่จะทำรายการ -->
+            <div
+              v-else-if="importStep === 'preview' && importPreviewData"
+              class="import-modal-preview"
+            >
+              <!-- Stats Summary -->
+              <div class="import-stats-grid">
+                <div class="import-stat-card">
+                  <span class="import-stat-label">ทั้งหมดในไฟล์</span>
+                  <span class="import-stat-value">{{ importPreviewData.total }} คน</span>
+                </div>
+                <div class="import-stat-card import-stat-card--create">
+                  <span class="import-stat-label">จะสร้างบัญชีใหม่</span>
+                  <span class="import-stat-value">{{ importPreviewData.wouldCreate }} คน</span>
+                </div>
+                <div class="import-stat-card import-stat-card--enroll">
+                  <span class="import-stat-label">จะผูกเข้าห้องเรียน</span>
+                  <span class="import-stat-value">{{ importPreviewData.wouldEnroll }} คน</span>
+                </div>
+                <div class="import-stat-card import-stat-card--skip">
+                  <span class="import-stat-label">จะข้าม (อยู่ในห้องแล้ว)</span>
+                  <span class="import-stat-value">{{ importPreviewData.wouldSkip }} คน</span>
+                </div>
+              </div>
+
+              <div class="import-hint-box">
+                ℹ️ หากกดยืนยัน ระบบจะสร้างบัญชีนักเรียนใหม่ (พร้อมสร้างรหัสผ่านชั่วคราว) และเพิ่มนักเรียนเข้าห้องเรียน <strong>{{ currentRoomName }}</strong> โดยอัตโนมัติ
+              </div>
+
+              <!-- Student preview list table -->
+              <div class="import-table-wrapper">
+                <table class="import-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 60px;">แถว</th>
+                      <th>รหัสนักเรียน</th>
+                      <th>ชื่อ - นามสกุล</th>
+                      <th>อีเมล</th>
+                      <th>สถานะการนำเข้า</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in importPreviewData.students" :key="item.row">
+                      <td>{{ item.row }}</td>
+                      <td>{{ item.studentCode || '-' }}</td>
+                      <td style="font-weight: 500;">{{ item.fullName }}</td>
+                      <td>{{ item.email }}</td>
+                      <td>
+                        <span
+                          class="import-badge"
+                          :class="{
+                            'import-badge--create': item.status === 'created',
+                            'import-badge--enroll': item.status === 'enrolled',
+                            'import-badge--skip': item.status === 'skipped'
+                          }"
+                        >
+                          {{
+                            item.status === 'created'
+                              ? 'สร้างบัญชีใหม่'
+                              : item.status === 'enrolled'
+                              ? 'ผูกเข้าห้อง'
+                              : 'ข้าม (มีอยู่ในห้องแล้ว)'
+                          }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Result State: นำเข้าจริงสำเร็จ แสดงข้อความและรหัสผ่านชั่วคราว -->
+            <div
+              v-else-if="importStep === 'result' && importResultData"
+              class="import-modal-result"
+            >
+              <AppStateNotice
+                variant="info"
+                title="นำเข้ารายชื่อสำเร็จ"
+                :message="importResultData.message || 'บันทึกรายชื่อนักเรียนเรียบร้อยแล้ว'"
+              />
+
+              <!-- Section: Created Students with Temporary Passwords -->
+              <div
+                v-if="createdStudentsWithPassword.length > 0"
+                class="import-password-section"
+              >
+                <div class="import-password-header">
+                  <div>
+                    <h4 class="import-password-title">
+                      🔑 รหัสผ่านชั่วคราวสำหรับบัญชีที่สร้างใหม่ ({{ createdStudentsWithPassword.length }} คน)
+                    </h4>
+                    <p class="import-password-desc">
+                      รหัสผ่านนี้จะแสดงเฉพาะครั้งนี้เท่านั้น กรุณาคัดลอกส่งให้นักเรียนเพื่อนำไปเข้าสู่ระบบ
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="import-copy-all-btn"
+                    @click="copyAllPasswords"
+                  >
+                    {{ copiedAll ? 'คัดลอกทั้งหมดแล้ว ✓' : 'คัดลอกข้อมูลทั้งหมด' }}
+                  </button>
+                </div>
+
+                <div class="import-table-wrapper">
+                  <table class="import-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสนักเรียน</th>
+                        <th>ชื่อ - นามสกุล</th>
+                        <th>อีเมล</th>
+                        <th>รหัสผ่านชั่วคราว</th>
+                        <th style="width: 80px; text-align: center;">จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="item in createdStudentsWithPassword" :key="item.row">
+                        <td>{{ item.studentCode || '-' }}</td>
+                        <td style="font-weight: 500;">{{ item.fullName }}</td>
+                        <td>{{ item.email }}</td>
+                        <td>
+                          <code class="student-mgmt-password">{{ item.temporaryPassword }}</code>
+                        </td>
+                        <td style="text-align: center;">
+                          <button
+                            type="button"
+                            class="import-copy-single-btn"
+                            @click="copySinglePassword(item)"
+                          >
+                            {{ copiedRowId === item.row ? 'คัดลอกแล้ว ✓' : 'คัดลอก' }}
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div v-else class="import-hint-box">
+                ไม่มีการสร้างบัญชีใหม่ (นักเรียนทุกคนมีบัญชีอยู่ในระบบแล้วและถูกผูกเข้าห้องเรียนเรียบร้อย)
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="import-modal-footer">
+            <template v-if="importStep === 'preview'">
+              <button
+                v-if="importError"
+                type="button"
+                class="import-btn import-btn--primary"
+                @click="fileInputRef?.click()"
+              >
+                เลือกไฟล์ใหม่
+              </button>
+              <button
+                type="button"
+                class="import-btn import-btn--ghost"
+                :disabled="importingCommit || importingPreview"
+                @click="handleCloseImportModal"
+              >
+                {{ importError ? 'ปิด' : 'ยกเลิก' }}
+              </button>
+              <button
+                v-if="!importError && importPreviewData"
+                type="button"
+                class="import-btn import-btn--primary"
+                :disabled="importingCommit || importingPreview || (importPreviewData.wouldCreate === 0 && importPreviewData.wouldEnroll === 0)"
+                @click="confirmImportCommit"
+              >
+                {{ importingCommit ? 'กำลังบันทึกข้อมูล...' : 'ยืนยันนำเข้าข้อมูล' }}
+              </button>
+            </template>
+
+            <template v-else-if="importStep === 'result'">
+              <button
+                type="button"
+                class="import-btn import-btn--primary"
+                @click="handleCloseImportModal"
+              >
+                เสร็จสิ้น
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
 
       <!-- Main Workspace: Table (Left 8 cols) + Add Form (Right 4 cols) -->
       <div class="student-mgmt-grid">
@@ -130,10 +384,33 @@ const resetResult = ref(null)
 const copiedPassword = ref(false)
 let copyTimer = null
 
-/** hidden input สำหรับนำเข้ารายชื่อนักเรียนจากไฟล์ CSV */
+/** hidden input สำหรับนำเข้ารายชื่อนักเรียนจากไฟล์ CSV / Excel */
 const fileInputRef = ref(null)
-/** ระหว่างนำเข้าไฟล์ CSV (กันกดซ้ำ) */
-const importingCsv = ref(false)
+const showImportModal = ref(false)
+const importStep = ref('preview') // 'preview' | 'result'
+const selectedImportFile = ref(null)
+const selectedImportFileName = ref('')
+const importingPreview = ref(false)
+const importingCommit = ref(false)
+const importError = ref('')
+const importRowErrors = ref([])
+const importPreviewData = ref(null)
+const importResultData = ref(null)
+
+const copiedAll = ref(false)
+const copiedRowId = ref(null)
+let copyAllTimer = null
+let copyRowTimer = null
+
+const currentRoomName = computed(() =>
+  classrooms.value.find((r) => r.id === selectedRoomId.value)?.name || 'ห้องเรียน'
+)
+
+const createdStudentsWithPassword = computed(() =>
+  (importResultData.value?.students || []).filter(
+    (item) => item.status === 'created' && item.temporaryPassword
+  )
+)
 
 /** แสดงรหัส HTTP ที่ backend ตอบกลับ เพื่อให้ debug ได้ง่าย */
 const pageErrorCode = computed(() =>
@@ -372,7 +649,23 @@ function clearFormFeedback() {
 }
 
 function handleImportCsv() {
-  pageError.value = 'ฟังก์ชันนำเข้ารายชื่อนักเรียนจากไฟล์ CSV ยังไม่เปิดให้บริการในเวอร์ชันนี้'
+  if (!selectedRoomId.value) {
+    setPageError(null, 'กรุณาเลือกห้องเรียนก่อนนำเข้ารายชื่อนักเรียน')
+    return
+  }
+  clearPageError()
+  fileInputRef.value?.click()
+}
+
+function handleCloseImportModal() {
+  if (importingCommit.value || importingPreview.value) return
+  showImportModal.value = false
+  selectedImportFile.value = null
+  selectedImportFileName.value = ''
+  importPreviewData.value = null
+  importResultData.value = null
+  importError.value = ''
+  importRowErrors.value = []
 }
 
 async function onFileSelected(event) {
@@ -382,28 +675,124 @@ async function onFileSelected(event) {
   // ล้างค่าเพื่อให้เลือกไฟล์เดิมซ้ำได้ถ้าต้องการ
   event.target.value = ''
 
-  if (!file.name.toLowerCase().endsWith('.csv')) {
-    pageError.value = 'กรุณาเลือกไฟล์นามสกุล .csv เท่านั้น'
+  const lowerName = file.name.toLowerCase()
+  if (!lowerName.endsWith('.csv') && !lowerName.endsWith('.xlsx')) {
+    setPageError(null, 'กรุณาเลือกไฟล์นามสกุล .csv หรือ .xlsx เท่านั้น')
     pageSuccess.value = ''
     return
   }
 
-  importingCsv.value = true
-  pageError.value = ''
-  pageSuccess.value = ''
+  if (!selectedRoomId.value) {
+    setPageError(null, 'กรุณาเลือกห้องเรียนก่อนนำเข้ารายชื่อนักเรียน')
+    return
+  }
+
+  selectedImportFile.value = file
+  selectedImportFileName.value = file.name
+  showImportModal.value = true
+  importStep.value = 'preview'
+  importingPreview.value = true
+  importError.value = ''
+  importRowErrors.value = []
+  importPreviewData.value = null
+  importResultData.value = null
 
   try {
-    const result = await studentService.importStudentsCsv(selectedRoomId.value, file)
-    pageSuccess.value = result?.message || `นำเข้ารายชื่อนักเรียนจากไฟล์ "${file.name}" สำเร็จ`
+    const result = await studentService.importStudentsFile(
+      selectedRoomId.value,
+      file,
+      { dryRun: true }
+    )
+    importPreviewData.value = result
+  } catch (error) {
+    importError.value = error.message || 'ไฟล์มีข้อผิดพลาด'
+    if (Array.isArray(error.details)) {
+      importRowErrors.value = error.details
+    }
+  } finally {
+    importingPreview.value = false
+  }
+}
 
-    // โหลดรายชื่อจริงจากฐานข้อมูลหลังบันทึกเสร็จ (ไม่มีการ mock)
+async function confirmImportCommit() {
+  if (!selectedImportFile.value || !selectedRoomId.value) return
+
+  importingCommit.value = true
+  importError.value = ''
+  importRowErrors.value = []
+
+  try {
+    const result = await studentService.importStudentsFile(
+      selectedRoomId.value,
+      selectedImportFile.value,
+      { dryRun: false }
+    )
+    importResultData.value = result
+    importStep.value = 'result'
+
+    // รีเฟรชรายชื่อจริงและจำนวนในห้องเรียน
     await loadStudents()
     await loadClassrooms({ silent: true })
   } catch (error) {
-    console.error('รายละเอียดข้อผิดพลาดการนำเข้าไฟล์ CSV (Console Only):', error.technical || error.message || error)
-    pageError.value = 'นำเข้าข้อมูลไม่สำเร็จ'
+    importError.value = error.message || 'นำเข้าข้อมูลไม่สำเร็จ'
+    if (Array.isArray(error.details)) {
+      importRowErrors.value = error.details
+    }
   } finally {
-    importingCsv.value = false
+    importingCommit.value = false
+  }
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const area = document.createElement('textarea')
+      area.value = text
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      document.execCommand('copy')
+      area.remove()
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function copyAllPasswords() {
+  if (createdStudentsWithPassword.value.length === 0) return
+
+  const rows = createdStudentsWithPassword.value.map(
+    (s) => `${s.studentCode || '-'}\t${s.fullName}\t${s.email}\t${s.temporaryPassword}`
+  )
+  const header = 'รหัสนักเรียน\tชื่อ - นามสกุล\tอีเมล\tรหัสผ่านชั่วคราว'
+  const text = [header, ...rows].join('\n')
+
+  const ok = await copyTextToClipboard(text)
+  if (ok) {
+    copiedAll.value = true
+    if (copyAllTimer) clearTimeout(copyAllTimer)
+    copyAllTimer = setTimeout(() => {
+      copiedAll.value = false
+    }, 2000)
+  }
+}
+
+async function copySinglePassword(item) {
+  if (!item?.temporaryPassword) return
+
+  const ok = await copyTextToClipboard(item.temporaryPassword)
+  if (ok) {
+    copiedRowId.value = item.row
+    if (copyRowTimer) clearTimeout(copyRowTimer)
+    copyRowTimer = setTimeout(() => {
+      copiedRowId.value = null
+    }, 2000)
   }
 }
 
@@ -451,6 +840,8 @@ onMounted(() => loadClassrooms())
 
 onBeforeUnmount(() => {
   if (copyTimer) clearTimeout(copyTimer)
+  if (copyAllTimer) clearTimeout(copyAllTimer)
+  if (copyRowTimer) clearTimeout(copyRowTimer)
 })
 </script>
 

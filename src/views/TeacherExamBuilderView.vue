@@ -1156,6 +1156,7 @@ import { useRoute, useRouter } from 'vue-router'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
 import { examService } from '@/services/examService'
 import { studentService } from '@/services/studentService'
+import { toApiQuestion } from '@/utils/examMappers'
 import {
   INITIAL_EXAM_METADATA,
   INITIAL_QUESTIONS,
@@ -1557,37 +1558,9 @@ const mapRemoteQuestion = (q, idx) => ({
   caseInsensitive: true
 })
 
-const localQuestionType = (q) =>
-  q.type === 'choice' || q.type === 'true_false'
-    ? 'MULTIPLE_CHOICE'
-    : q.type === 'short_answer'
-      ? 'SHORT_ANSWER'
-      : 'LONG_ANSWER'
-
-/** ร่าง payload คำถามจากหน้าจอ → รูปแบบที่ backend รับ */
-const buildQuestionPayload = (q) => ({
-  type: localQuestionType(q),
-  prompt: q.prompt,
-  points: Number(q.score) || 1,
-  explanation: q.explanation ? String(q.explanation).trim() : null,
-  ...(q.type === 'short_answer'
-    ? { referenceText: (q.acceptableKeys ?? []).join('\n') || null }
-    : {}),
-  ...(q.choices
-    ? {
-        choices: q.choices.map((c, i) => ({
-          label: c.label || thaiLabels[i] || 'ก.',
-          text: c.text,
-          isCorrect: !!c.isCorrect,
-          order: i
-        }))
-      }
-    : {})
-})
-
 /** บันทึกคำถามใหม่ 1 ข้อจากหน้าจอลง DB (คืน object ที่ backend สร้าง) */
 const persistQuestion = async (examId, q) => {
-  const created = await examService.addQuestion(examId, buildQuestionPayload(q))
+  const created = await examService.addQuestion(examId, toApiQuestion(q))
   if (created?.id) q.remoteId = created.id
   return created
 }
@@ -1595,7 +1568,7 @@ const persistQuestion = async (examId, q) => {
 /** อัปเดตคำถามเดิมที่บันทึกแล้ว (แก้คะแนน/โจทย์/เฉลย) */
 const persistQuestionPatch = (examId, q) => {
   if (!q?.remoteId) return Promise.resolve(null)
-  return examService.updateQuestion(examId, q.remoteId, buildQuestionPayload(q))
+  return examService.updateQuestion(examId, q.remoteId, toApiQuestion(q))
 }
 
 /** บันทึกคำถามทุกข้อที่ยังไม่มี id ฝั่ง backend */

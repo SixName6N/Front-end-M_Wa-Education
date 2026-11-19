@@ -137,8 +137,13 @@ async function request(method, endpoint, data, { retry = true } = {}) {
 
   let body
   if (data !== undefined) {
-    headers['Content-Type'] = 'application/json'
-    body = JSON.stringify(data)
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      body = data
+      // อย่าตั้ง Content-Type เพื่อให้เบราว์เซอร์ใส่ multipart/form-data พร้อม boundary ให้อัตโนมัติ
+    } else {
+      headers['Content-Type'] = 'application/json'
+      body = JSON.stringify(data)
+    }
   }
 
   let response
