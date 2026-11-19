@@ -4,6 +4,7 @@
       <!-- Top Title & Metrics Bar -->
       <TeacherHeaderStats
         v-model:selected-room="selectedRoomId"
+        v-model:status-filter="statusFilter"
         :rooms="roomOptions"
         :metrics="metrics"
         :loading="loadingClassrooms"
@@ -26,6 +27,24 @@
         message="ยังไม่มีห้องเรียนในระบบ — สร้างห้องเรียนก่อนแล้วจึงเพิ่มนักเรียนได้"
       />
 
+      <!-- ผลลัพธ์จากการเปิด/ระงับการใช้งานบัญชี -->
+      <div
+        v-if="statusMessage"
+        class="student-mgmt-toast"
+        :class="`student-mgmt-toast--${statusTone}`"
+        role="status"
+      >
+        <span>{{ statusMessage }}</span>
+        <button
+          type="button"
+          class="student-mgmt-toast__close"
+          aria-label="ปิดข้อความ"
+          @click="statusMessage = ''"
+        >
+          ×
+        </button>
+      </div>
+
       <!-- Main Workspace: Table (Left 8 cols) + Add Form (Right 4 cols) -->
       <div class="student-mgmt-grid">
         <!-- Left: Student Table -->
@@ -35,9 +54,12 @@
             v-model:search-query="searchQuery"
             :total-count="students.length"
             :loading="loadingStudents"
+            :empty-text="emptyRosterText"
+            :busy-id="busyStudentId"
             @import-csv="handleImportCsv"
             @export-data="handleExportData"
             @manage-student="handleRemoveStudent"
+            @toggle-status="handleToggleStatus"
           />
         </div>
 
@@ -62,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
 import TeacherHeaderStats from '@/components/teacher/TeacherHeaderStats.vue'
 import StudentRosterTable from '@/components/teacher/StudentRosterTable.vue'
@@ -74,16 +96,35 @@ const classrooms = ref([])
 const students = ref([])
 const selectedRoomId = ref('')
 const searchQuery = ref('')
+/** ตัวกรองสถานะบัญชี: 'all' | 'active' | 'inactive' (มาจากการ์ดสรุปด้านบน) */
+const statusFilter = ref('all')
 
 const loadingClassrooms = ref(false)
 const loadingStudents = ref(false)
 const savingStudent = ref(false)
+/** id ของนักเรียนที่กำลังบันทึกสถานะ (ปิดปุ่มชั่วคราวกันกดซ้ำ) */
+const busyStudentId = ref('')
 
 const pageError = ref('')
 const pageErrorStatus = ref(0)
 const formError = ref('')
 const formErrorStatus = ref(0)
 const formSuccess = ref(null)
+
+/** ข้อความแจ้งผลการเปิด/ระงับบัญชี (หายเองใน 4 วินาที) */
+const statusMessage = ref('')
+const statusTone = ref('success')
+let statusTimer = null
+
+function showStatus(message, tone = 'success') {
+  statusMessage.value = message
+  statusTone.value = tone
+  if (statusTimer) clearTimeout(statusTimer)
+  statusTimer = setTimeout(() => {
+    statusMessage.value = ''
+    statusTimer = null
+  }, 4000)
+}
 
 /** แสดงรหัส HTTP ที่ backend ตอบกลับ เพื่อให้ debug ได้ง่าย */
 const pageErrorCode = computed(() =>
@@ -125,15 +166,38 @@ const noClassrooms = computed(
 
 const filteredStudents = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return students.value
 
-  return students.value.filter(
-    (student) =>
+  return students.value.filter((student) => {
+    // กรองตามสถานะบัญชีที่เลือกจากการ์ดสรุป
+    if (statusFilter.value === 'active' && !student.isActive) return false
+    if (statusFilter.value === 'inactive' && student.isActive) return false
+
+    if (!q) return true
+
+    return (
       student.name.toLowerCase().includes(q) ||
       student.studentCode.toLowerCase().includes(q) ||
       student.email.toLowerCase().includes(q) ||
       String(student.seat).includes(q)
-  )
+    )
+  })
+})
+
+/** ข้อความตอนตารางว่าง — แยกสาเหตุให้ผู้ใช้รู้ว่าต้องทำอะไรต่อ */
+const emptyRosterText = computed(() => {
+  if (students.value.length === 0) {
+    return 'ยังไม่มีนักเรียนในห้องนี้ — เพิ่มได้จากฟอร์มด้านขวา'
+  }
+  if (statusFilter.value === 'active') {
+    return 'ไม่มีนักเรียนที่บัญชีใช้งานได้ในห้องนี้'
+  }
+  if (statusFilter.value === 'inactive') {
+    return 'ไม่มีนักเรียนที่ถูกระงับการใช้งานในห้องนี้'
+  }
+  if (searchQuery.value.trim()) {
+    return 'ไม่พบนักเรียนที่ตรงกับคำค้นหา'
+  }
+  return 'ไม่พบรายชื่อนักเรียน'
 })
 
 /** แปลง user จาก API → แถวในตาราง (seat มาจากลำดับในรายชื่อ) */
@@ -147,7 +211,7 @@ function toRosterRow(student, index) {
     name: student.fullName ?? '',
     email: student.email ?? '',
     isActive,
-    status: isActive ? 'graded' : 'unsubmitted',
+    status: isActive ? 'active' : 'suspended',
     statusText: isActive ? 'ใช้งาน' : 'ระงับการใช้งาน',
     actionText: 'นำออกจากห้อง'
   }
@@ -249,6 +313,53 @@ async function handleRemoveStudent(student) {
   }
 }
 
+/** เปิด/ระงับการใช้งานบัญชีนักเรียน (PATCH /students/:id { isActive }) */
+async function handleToggleStatus(student) {
+  if (!student?.id || busyStudentId.value) return
+
+  const nextActive = !student.isActive
+  const confirmed = window.confirm(
+    nextActive
+      ? `เปิดใช้งานบัญชีของ ${student.name} อีกครั้ง?\nนักเรียนจะเข้าสู่ระบบได้ตามปกติ`
+      : `ระงับบัญชีของ ${student.name}?\nนักเรียนจะเข้าสู่ระบบไม่ได้ทุกห้องเรียน (คะแนนและประวัติการสอบยังอยู่ครบ)`
+  )
+  if (!confirmed) return
+
+  busyStudentId.value = student.id
+  clearPageError()
+
+  try {
+    const updated = await studentService.updateStudentStatus(student.id, nextActive)
+
+    // อัปเดตเฉพาะแถวนี้ ไม่ต้องโหลดรายชื่อใหม่ทั้งห้อง
+    const index = students.value.findIndex((row) => row.id === student.id)
+    if (index !== -1) {
+      const apiLike =
+        updated && updated.id
+          ? updated
+          : {
+              id: student.id,
+              email: student.email,
+              fullName: student.name,
+              studentCode: student.studentCode,
+              isActive: nextActive
+            }
+      students.value[index] = toRosterRow(apiLike, index)
+    }
+
+    showStatus(
+      nextActive
+        ? `เปิดใช้งานบัญชีของ ${student.name} แล้ว`
+        : `ระงับการใช้งานบัญชีของ ${student.name} แล้ว`
+    )
+  } catch (error) {
+    setPageError(error, 'บันทึกสถานะบัญชีไม่สำเร็จ')
+    showStatus(error?.message || 'บันทึกสถานะบัญชีไม่สำเร็จ', 'error')
+  } finally {
+    busyStudentId.value = ''
+  }
+}
+
 /** ปุ่ม "ลองใหม่" บนกล่องแจ้ง error */
 function retryLoad() {
   if (classrooms.value.length === 0) {
@@ -293,10 +404,15 @@ async function handleDownloadTemplate() {
 watch(selectedRoomId, () => {
   formError.value = ''
   formSuccess.value = null
+  statusMessage.value = ''
   loadStudents()
 })
 
 onMounted(() => loadClassrooms())
+
+onBeforeUnmount(() => {
+  if (statusTimer) clearTimeout(statusTimer)
+})
 </script>
 
 <style scoped src="@/assets/styles/views/teacher-student-management.css"></style>

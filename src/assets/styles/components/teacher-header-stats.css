@@ -49,10 +49,37 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  /* ปุ่มกรอง: รีเซ็ตสไตล์ปุ่มให้หน้าตาเหมือนข้อความเดิม แล้วเพิ่ม hover/active */
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .teacher-header-stats__metric-item strong {
   color: #111827;
+}
+
+.teacher-header-stats__metric-item:hover {
+  background-color: #f3f4f6;
+}
+
+.teacher-header-stats__metric-item--active {
+  background-color: #e0f2fe;
+  color: #015b7e;
+}
+
+.teacher-header-stats__metric-item--active strong {
+  color: #015b7e;
+}
+
+.teacher-header-stats__metric-item:focus-visible {
+  outline: 2px solid #015b7e;
+  outline-offset: 1px;
 }
 
 .teacher-header-stats__dot {

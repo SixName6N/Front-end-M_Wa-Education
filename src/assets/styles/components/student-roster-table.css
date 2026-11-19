@@ -180,31 +180,22 @@
   border-radius: 20px;
 }
 
-.roster-status-badge--graded {
+.roster-status-badge--active {
   background-color: #ecfdf5;
   color: #047857;
 }
 
-.roster-status-badge--graded .roster-status-dot {
+.roster-status-badge--active .roster-status-dot {
   background-color: #10b981;
 }
 
-.roster-status-badge--pending {
-  background-color: #fef7ea;
-  color: #a06500;
-  border: 1px solid #f3d58d;
-}
-
-.roster-status-badge--pending .roster-status-dot {
-  background-color: #e59e2c;
-}
-
-.roster-status-badge--unsubmitted {
+.roster-status-badge--suspended {
   background-color: #f3f4f6;
   color: #6b7280;
+  border: 1px solid #e5e7eb;
 }
 
-.roster-status-badge--unsubmitted .roster-status-dot {
+.roster-status-badge--suspended .roster-status-dot {
   background-color: #9ca3af;
 }
 
@@ -238,6 +229,14 @@
   text-align: right;
 }
 
+.roster-table__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  white-space: nowrap;
+}
+
 .roster-btn-link {
   font-size: 12px;
   font-weight: 500;
@@ -256,6 +255,10 @@
   color: #0d8aaa;
 }
 
+.roster-btn-link--warn {
+  color: #b45309;
+}
+
 .roster-btn-link--muted {
   color: #6b7280;
 }
@@ -266,6 +269,12 @@
 
 .roster-btn-link:hover {
   text-decoration: underline;
+}
+
+.roster-btn-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: none;
 }
 
 /* Pagination Footer */

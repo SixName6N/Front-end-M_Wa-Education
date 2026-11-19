@@ -65,7 +65,7 @@
 
             <tr v-else-if="students.length === 0">
               <td colspan="7" class="roster-table__empty">
-                ยังไม่มีนักเรียนในห้องนี้ — เพิ่มได้จากฟอร์มด้านขวา
+                {{ emptyText }}
               </td>
             </tr>
 
@@ -109,13 +109,29 @@
 
                 <!-- Actions -->
                 <td class="roster-table__manage">
-                  <button
-                    type="button"
-                    class="roster-btn-link roster-btn-link--danger"
-                    @click="$emit('manage-student', student)"
-                  >
-                    {{ student.actionText }}
-                  </button>
+                  <div class="roster-table__actions">
+                    <button
+                      type="button"
+                      class="roster-btn-link"
+                      :class="student.isActive ? 'roster-btn-link--warn' : 'roster-btn-link--teal'"
+                      :disabled="busyId === student.id"
+                      :title="student.isActive
+                        ? 'ระงับบัญชีนี้ — นักเรียนจะเข้าสู่ระบบไม่ได้ทุกห้องเรียน'
+                        : 'เปิดใช้งานบัญชีนี้อีกครั้ง'"
+                      @click="$emit('toggle-status', student)"
+                    >
+                      {{ student.isActive ? 'ระงับการใช้งาน' : 'เปิดใช้งาน' }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="roster-btn-link roster-btn-link--danger"
+                      :disabled="busyId === student.id"
+                      @click="$emit('manage-student', student)"
+                    >
+                      {{ student.actionText }}
+                    </button>
+                  </div>
                 </td>
               </tr>
             </template>
@@ -154,6 +170,16 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  /** ข้อความตอนตารางว่าง (แยกกรณี "ห้องว่าง" กับ "ไม่ตรงตัวกรอง") */
+  emptyText: {
+    type: String,
+    default: 'ยังไม่มีนักเรียนในห้องนี้ — เพิ่มได้จากฟอร์มด้านขวา'
+  },
+  /** id ของนักเรียนที่กำลังบันทึกสถานะอยู่ (ปุ่มจะถูกปิดชั่วคราว) */
+  busyId: {
+    type: String,
+    default: ''
   }
 })
 
@@ -161,7 +187,8 @@ defineEmits([
   'update:searchQuery',
   'import-csv',
   'export-data',
-  'manage-student'
+  'manage-student',
+  'toggle-status'
 ])
 
 const selectedStudents = ref([])
