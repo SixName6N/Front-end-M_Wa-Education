@@ -70,27 +70,15 @@
         <span class="form-hint">ใช้เป็นชื่อผู้ใช้สำหรับเข้าสู่ระบบของนักเรียน</span>
       </div>
 
-      <!-- Classroom -->
+      <!-- Classroom: แยกชั้น/ห้อง + ค้นหา real-time -->
       <div class="form-group">
-        <label class="form-label" for="student-room">ห้องเรียน</label>
-        <select
-          id="student-room"
-          class="form-select"
-          :value="classroomId"
-          :disabled="disabled || classrooms.length === 0"
-          @change="$emit('update:classroomId', $event.target.value)"
-        >
-          <option v-if="classrooms.length === 0" value="">
-            ยังไม่มีห้องเรียน
-          </option>
-          <option
-            v-for="room in classrooms"
-            :key="room.id"
-            :value="room.id"
-          >
-            {{ room.name }}
-          </option>
-        </select>
+        <label class="form-label">ห้องเรียน</label>
+        <ClassroomPicker
+          :model-value="classroomId"
+          :classrooms="classrooms"
+          :disabled="disabled"
+          @update:model-value="$emit('update:classroomId', $event)"
+        />
       </div>
 
       <!-- Feedback -->
@@ -99,7 +87,11 @@
         class="form-feedback form-feedback--error"
         role="alert"
       >
-        {{ localError || error }}
+        <span
+          v-if="!localError && errorCode"
+          class="form-feedback__code"
+        >{{ errorCode }}</span>
+        <span>{{ localError || error }}</span>
       </p>
       <div v-else-if="success" class="form-feedback form-feedback--success">
         <strong>เพิ่ม {{ success.name }} เรียบร้อยแล้ว</strong>
@@ -145,6 +137,7 @@
 
 <script setup>
 import { reactive, ref, watch } from 'vue'
+import ClassroomPicker from '@/components/common/ClassroomPicker.vue'
 
 const props = defineProps({
   classrooms: {
@@ -164,6 +157,10 @@ const props = defineProps({
     default: false
   },
   error: {
+    type: String,
+    default: ''
+  },
+  errorCode: {
     type: String,
     default: ''
   },

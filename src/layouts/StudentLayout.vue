@@ -26,7 +26,14 @@
 
         <!-- Right: Role badge, notifications, profile -->
         <div class="student-navbar__right">
-          <span class="student-navbar__role-badge">นักเรียน</span>
+          <span class="student-navbar__role-badge">{{ authStore.isAdmin ? 'ผู้ดูแลระบบ' : 'นักเรียน' }}</span>
+          <router-link
+            v-if="authStore.isAdmin"
+            to="/teacher/students"
+            class="student-navbar__role-link"
+          >
+            สลับเป็นมุมมองครู
+          </router-link>
 
           <button type="button" class="student-navbar__icon-btn" aria-label="แจ้งเตือน">
             <IconBell size="18" />

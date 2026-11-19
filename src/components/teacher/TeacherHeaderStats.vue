@@ -12,26 +12,15 @@
 
     <!-- Right: Room selector & Quick metric pills -->
     <div class="teacher-header-stats__controls">
-      <!-- Classroom select (โหลดจาก API) -->
-      <div class="teacher-header-stats__select-wrapper">
-        <select
-          :value="selectedRoom"
-          class="teacher-header-stats__select"
-          :disabled="loading || rooms.length === 0"
-          @change="$emit('update:selectedRoom', $event.target.value)"
-        >
-          <option v-if="rooms.length === 0" value="">
-            {{ loading ? 'กำลังโหลดห้องเรียน...' : 'ยังไม่มีห้องเรียน' }}
-          </option>
-          <option
-            v-for="room in rooms"
-            :key="room.id"
-            :value="room.id"
-          >
-            {{ room.label }}
-          </option>
-        </select>
-      </div>
+      <!-- Classroom picker (โหลดจาก API): แยกชั้น/ห้อง + ค้นหา real-time -->
+      <ClassroomPicker
+        variant="header"
+        :model-value="selectedRoom"
+        :classrooms="rooms"
+        :loading="loading"
+        search-placeholder="ค้นหาห้อง..."
+        @update:model-value="$emit('update:selectedRoom', $event)"
+      />
 
       <!-- Metric stats pills (นับจากรายชื่อจริงในห้อง) -->
       <div class="teacher-header-stats__metrics">
@@ -60,6 +49,7 @@
 
 <script setup>
 import IconChevronRight from '@/components/icons/IconChevronRight.vue'
+import ClassroomPicker from '@/components/common/ClassroomPicker.vue'
 import { TEACHER_PROFILE } from '@/constants/teacher.constants'
 
 defineProps({

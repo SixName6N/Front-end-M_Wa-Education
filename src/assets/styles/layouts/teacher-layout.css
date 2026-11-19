@@ -92,12 +92,26 @@
 }
 
 .teacher-navbar__role-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background-color: #e0f2fe;
   color: #0369a1;
   font-size: 12px;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 20px;
+}
+
+.teacher-navbar__role-link {
+  color: #0369a1;
+  text-decoration: underline;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.teacher-navbar__role-link:hover {
+  color: #075985;
 }
 
 .teacher-navbar__role-btn {

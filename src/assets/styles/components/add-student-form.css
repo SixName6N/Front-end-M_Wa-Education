@@ -170,6 +170,18 @@
   color: #b91c1c;
 }
 
+.form-feedback__code {
+  align-self: flex-start;
+  padding: 2px 8px;
+  background-color: #fee2e2;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #991b1b;
+}
+
 .form-feedback--success {
   background-color: #ecfdf5;
   border: 1px solid #a7f3d0;

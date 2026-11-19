@@ -481,7 +481,12 @@ const handleReview = (exam) => {
 }
 
 const handleImportClick = () => {
-  alert('เปิดหน้าต่างนำเข้าชุดข้อสอบ (รองรับไฟล์ Word .docx, Excel .xlsx, CSV)')
+  const title = window.prompt('ตั้งชื่อชุดข้อสอบที่ต้องการนำเข้า:')
+  if (!title || !title.trim()) return
+  router.push({
+    path: '/teacher/exams/create',
+    query: { title: title.trim(), import: '1' }
+  })
 }
 
 // Create modal
