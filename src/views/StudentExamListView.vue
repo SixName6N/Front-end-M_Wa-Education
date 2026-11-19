@@ -32,6 +32,19 @@
 
       <!-- Content Sections -->
       <template v-else>
+        <!-- Start error (เช่น สิทธิ์/IP/หมดเวลา) -->
+        <AppStateNotice
+          v-if="startError"
+          variant="error"
+          code="เข้าห้องสอบไม่สำเร็จ"
+          :message="startError"
+          compact
+        >
+          <button type="button" class="exam-notice-dismiss" @click="startError = ''">
+            ปิดข้อความ
+          </button>
+        </AppStateNotice>
+
         <!-- 3. Section: Currently Open Exams (กำลังเปิดให้สอบ) -->
         <section v-if="shouldShowSection('open')" class="exam-section">
           <div class="exam-section__header">
@@ -50,6 +63,7 @@
               v-for="exam in filteredOpenExams"
               :key="exam.id"
               :exam="exam"
+              :busy="startingExamId === exam.id"
               @start-exam="handleStartExam"
             />
           </div>
@@ -116,20 +130,27 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import StudentLayout from '@/layouts/StudentLayout.vue'
 import ExamBanner from '@/components/exam/ExamBanner.vue'
 import ExamFilter from '@/components/exam/ExamFilter.vue'
 import ExamCard from '@/components/exam/ExamCard.vue'
 import ExamGuidelines from '@/components/exam/ExamGuidelines.vue'
+import AppStateNotice from '@/components/common/AppStateNotice.vue'
 
 import { studentExamService } from '@/services/studentExamService'
 import { useAuthStore } from '@/stores/authStore'
 
+const router = useRouter()
 const authStore = useAuthStore()
 
 const loading = ref(false)
 const fetchError = ref(null)
 const rawExams = ref([])
+
+// กำลังเริ่มทำข้อสอบชิ้นไหน + ข้อความ error ที่ได้จาก API (เช่น ไม่ได้อยู่ในห้อง/IP จำกัด)
+const startingExamId = ref('')
+const startError = ref('')
 
 const searchQuery = ref('')
 const activeFilter = ref('all')
@@ -395,8 +416,27 @@ onMounted(async () => {
   await fetchExams()
 })
 
-const handleStartExam = (exam) => {
-  alert(`กำลังนำทางเข้าสู่ห้องสอบ: ${exam.title}`)
+/**
+ * เข้าห้องสอบ: ตรวจสิทธิ์ด้วย API จริงก่อน (อ่านอย่างเดียว ไม่สร้างใบสอบ)
+ * แล้วพาไปหน้าทำข้อสอบ — หน้าห้องสอบจะเป็นคนสร้าง/ทำต่อ submission เอง
+ */
+const handleStartExam = async (exam) => {
+  if (!exam?.id || startingExamId.value) return
+
+  startingExamId.value = exam.id
+  startError.value = ''
+
+  try {
+    await studentExamService.getExamDetail(exam.id)
+    router.push({ name: 'student-exam-take', params: { examId: exam.id } })
+  } catch (err) {
+    startError.value =
+      err?.message || 'ไม่สามารถเข้าห้องสอบได้ กรุณาลองใหม่อีกครั้ง'
+    // ข้อมูลอาจเปลี่ยนไปแล้ว (เช่น หมดเวลา/ถูกปิดสอบ) — โหลดรายการใหม่ให้ตรงสถานะ
+    fetchExams()
+  } finally {
+    startingExamId.value = ''
+  }
 }
 
 const handleReviewExam = (exam) => {

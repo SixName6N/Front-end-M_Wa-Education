@@ -309,6 +309,27 @@
   transform: translateY(-1px);
 }
 
+.exam-card__btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.exam-card__btn-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: exam-card-spin 0.8s linear infinite;
+}
+
+@keyframes exam-card-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .exam-card__btn--locked {
   background-color: #f1f5f9;
   color: var(--color-text-placeholder);
