@@ -962,3 +962,38 @@
   background-color: #004d61;
   border-color: #004d61;
 }
+
+.grading-btn-action-sm--ghost {
+  background-color: #ffffff;
+  color: #015b7e;
+  border-color: #bae6fd;
+}
+
+.grading-btn-action-sm--ghost:hover {
+  background-color: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
+.grading-btn-action-sm--danger {
+  background-color: #ffffff;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.grading-btn-action-sm--danger:hover {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.grading-btn-action-sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.grading-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}

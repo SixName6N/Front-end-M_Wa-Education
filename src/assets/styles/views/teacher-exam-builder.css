@@ -1570,3 +1570,193 @@
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* ---------- Exam settings modal (ตั้งค่าชุดข้อสอบ) ---------- */
+.eb-btn--sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.eb-btn:disabled,
+.eb-icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.eb-settings-modal {
+  max-width: 760px;
+}
+
+.eb-set-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.eb-set-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #015b7e;
+  margin: 0 0 10px;
+}
+
+.eb-set-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.eb-set-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.eb-set-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.eb-set-input,
+.eb-set-textarea {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #1f2937;
+  background-color: #ffffff;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.eb-set-input:focus,
+.eb-set-textarea:focus {
+  border-color: #015b7e;
+  box-shadow: 0 0 0 1px #015b7e;
+}
+
+.eb-set-input:disabled {
+  background-color: #f9fafb;
+  color: #9ca3af;
+}
+
+.eb-set-textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.eb-set-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.eb-set-grid--assign {
+  grid-template-columns: 1.2fr 1fr 1fr auto;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.eb-set-assign-btn {
+  margin-bottom: 10px;
+}
+
+.eb-set-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.eb-set-ip {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.eb-set-list {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eb-set-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 8px 6px 12px;
+}
+
+.eb-set-list-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.eb-set-list-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-left: 6px;
+}
+
+.eb-cutoff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.eb-cutoff-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.eb-cutoff-percent {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.eb-cutoff-percent .eb-set-input {
+  padding-right: 26px;
+}
+
+.eb-cutoff-percent span {
+  position: absolute;
+  right: 10px;
+  font-size: 12px;
+  color: #6b7280;
+  pointer-events: none;
+}
+
+.eb-cutoff-grade {
+  text-align: center;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .eb-set-grid,
+  .eb-set-grid--assign {
+    grid-template-columns: 1fr;
+  }
+}

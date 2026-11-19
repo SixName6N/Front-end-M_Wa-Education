@@ -125,6 +125,15 @@ export const examService = {
   },
 
   /**
+   * ดึง IP ปัจจุบันของผู้เรียก (ไว้ทำปุ่ม "ใช้ IP นี้" ในช่องจำกัด IP)
+   * @returns {Promise<{ ip: string, normalizedIp: string|null, version: number|null }>}
+   */
+  async getRequestIp() {
+    const { data } = await apiClient.get('/exams/request-ip')
+    return data ?? { ip: '', normalizedIp: null, version: null }
+  },
+
+  /**
    * ดึงเกณฑ์ตัดเกรดของชุดข้อสอบ
    * @param {string} examId
    */

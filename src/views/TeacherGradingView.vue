@@ -202,7 +202,7 @@
             </div>
 
             <!-- Start Grading CTA Button -->
-            <div>
+            <div class="grading-card-actions">
               <button
                 v-if="exam.loadFailed"
                 type="button"
@@ -220,6 +220,16 @@
               >
                 <span>เริ่มตรวจและให้คะแนนนักเรียน</span>
                 <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+              <button
+                v-if="!exam.loadFailed"
+                type="button"
+                class="grading-btn-action-sm grading-btn-action-sm--danger"
+                :disabled="gradingActionLoading"
+                @click="handleCloseExam(exam.id)"
+              >
+                <span class="material-symbols-outlined text-[14px]">lock</span>
+                <span>ปิดชุดข้อสอบ</span>
               </button>
             </div>
           </article>
@@ -264,7 +274,7 @@
               </div>
 
               <!-- View Score Button -->
-              <div>
+              <div class="grading-card-actions">
                 <button
                   type="button"
                   class="grading-view-scores-btn"
@@ -272,6 +282,15 @@
                 >
                   <span class="material-symbols-outlined text-[16px]">visibility</span>
                   <span>ดูคะแนนนักเรียน</span>
+                </button>
+                <button
+                  type="button"
+                  class="grading-btn-action-sm grading-btn-action-sm--danger"
+                  :disabled="gradingActionLoading"
+                  @click="handleCloseExam(exam.id)"
+                >
+                  <span class="material-symbols-outlined text-[14px]">lock</span>
+                  <span>ปิดชุดข้อสอบ</span>
                 </button>
               </div>
             </article>
@@ -552,6 +571,26 @@
               <span>ปล่อยผลสอบทั้งชุดให้นักเรียนทุกคน</span>
             </button>
             <button
+              v-if="!selectedSubmissionDetail"
+              type="button"
+              class="grading-btn-action-sm grading-btn-action-sm--ghost"
+              :disabled="gradingActionLoading"
+              @click="handleExportResults(activeGradingExam.id, activeGradingExam.title)"
+            >
+              <span class="material-symbols-outlined text-[16px]">download</span>
+              <span>ส่งออกผลคะแนน (CSV)</span>
+            </button>
+            <button
+              v-if="!selectedSubmissionDetail"
+              type="button"
+              class="grading-btn-action-sm grading-btn-action-sm--danger"
+              :disabled="gradingActionLoading"
+              @click="handleCloseExam(activeGradingExam.id)"
+            >
+              <span class="material-symbols-outlined text-[16px]">lock</span>
+              <span>ปิดชุดข้อสอบ</span>
+            </button>
+            <button
               type="button"
               class="grading-view-scores-btn"
               @click="closeGradingModal"
@@ -600,6 +639,15 @@
           </div>
 
           <div class="grading-modal-footer">
+            <button
+              type="button"
+              class="grading-btn-action-sm grading-btn-action-sm--ghost"
+              :disabled="gradingActionLoading"
+              @click="handleExportResults(selectedExamForScores.id, selectedExamForScores.title)"
+            >
+              <span class="material-symbols-outlined text-[16px]">download</span>
+              <span>ส่งออกผลคะแนน (CSV)</span>
+            </button>
             <button
               type="button"
               class="grading-view-scores-btn"
@@ -986,6 +1034,39 @@ async function handleReleaseAllResults(examId) {
     await fetchGradingData()
   } catch (err) {
     alert(err.message || 'ปล่อยผลสอบทั้งชุดไม่สำเร็จ')
+  } finally {
+    gradingActionLoading.value = false
+  }
+}
+
+/**
+ * ส่งออกผลคะแนนทั้งชุดเป็น CSV (เรียก API จริง)
+ */
+async function handleExportResults(examId, title) {
+  gradingActionLoading.value = true
+  try {
+    await gradingService.exportExamResultsCsv(examId, { title })
+  } catch (err) {
+    alert(err.message || 'ส่งออกผลคะแนนไม่สำเร็จ')
+  } finally {
+    gradingActionLoading.value = false
+  }
+}
+
+/**
+ * ปิดชุดข้อสอบ (เปลี่ยนสถานะเป็น CLOSED — นักเรียนเข้าสอบไม่ได้อีก)
+ */
+async function handleCloseExam(examId) {
+  if (!confirm('ยืนยันปิดชุดข้อสอบนี้? นักเรียนจะไม่สามารถเข้าสอบได้อีก')) return
+  gradingActionLoading.value = true
+  try {
+    await examService.closeExam(examId)
+    await fetchGradingData()
+    if (activeGradingExam.value?.id === examId) {
+      activeGradingExam.value = { ...activeGradingExam.value, status: 'CLOSED' }
+    }
+  } catch (err) {
+    alert(err.message || 'ปิดชุดข้อสอบไม่สำเร็จ')
   } finally {
     gradingActionLoading.value = false
   }
