@@ -13,12 +13,19 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
+    // หมายเหตุ: getter ของ Pinia เรียกด้วย `this` เท่านั้น (ไม่มีพารามิเตอร์ getters
+    // เหมือน Vuex) จึงต้องอ้าง getter อื่นผ่าน this.<ชื่อ getter>
+
     /** บัญชีผู้ดูแล: เข้าได้ทั้งฝั่งนักเรียนและฝั่งครู */
-    isAdmin: (state) => state.user?.role === USER_ROLES.ADMIN,
-    isStudent: (state, getters) =>
-      getters.isAdmin || state.currentRole === USER_ROLES.STUDENT,
-    isTeacher: (state, getters) =>
-      getters.isAdmin || state.currentRole === USER_ROLES.TEACHER
+    isAdmin() {
+      return this.user?.role === USER_ROLES.ADMIN
+    },
+    isStudent() {
+      return this.isAdmin || this.currentRole === USER_ROLES.STUDENT
+    },
+    isTeacher() {
+      return this.isAdmin || this.currentRole === USER_ROLES.TEACHER
+    }
   },
 
   actions: {
