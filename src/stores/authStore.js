@@ -61,6 +61,16 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /**
+     * เปลี่ยนรหัสผ่านของบัญชีตัวเอง — ต้องยืนยันด้วยรหัสผ่านปัจจุบัน
+     * (backend จะออก token ชุดใหม่ให้เครื่องนี้ และเพิกถอน session เครื่องอื่น)
+     */
+    async changePassword(payload) {
+      const result = await authService.changePassword(payload)
+      this.applySession(result.user)
+      return result
+    },
+
     /** กู้ session เดิมตอนเปิดแอป ถ้ามี token เก็บอยู่ */
     async restore() {
       if (this.isAuthenticated || !hasStoredSession()) return

@@ -151,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import StudentLayout from '@/layouts/StudentLayout.vue'
 import ExamBanner from '@/components/exam/ExamBanner.vue'

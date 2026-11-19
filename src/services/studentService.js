@@ -39,6 +39,17 @@ export const studentService = {
     return data
   },
 
+  /**
+   * รีเซ็ตรหัสผ่านให้นักเรียน (ครูเท่านั้น)
+   * - ไม่ส่ง password → backend สุ่มรหัสใหม่ 12 ตัวให้
+   * - คืนรหัสผ่านใหม่กลับมาเป็น plaintext เพื่อให้ครูคัดลอกส่งนักเรียน
+   */
+  async resetStudentPassword(studentId, password) {
+    const body = password ? { password } : {}
+    const { data } = await apiClient.post(`/students/${studentId}/reset-password`, body)
+    return data?.password ?? ''
+  },
+
   /** ดาวน์โหลดแม่แบบ CSV สำหรับนำเข้ารายชื่อนักเรียน */
   async downloadTemplate() {
     const token = getAccessToken()

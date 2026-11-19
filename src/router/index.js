@@ -37,6 +37,14 @@ const router = createRouter({
       }
     },
     {
+      path: '/student/account',
+      name: 'student-account',
+      component: () => import('@/views/StudentAccountView.vue'),
+      meta: {
+        title: 'บัญชีของฉัน (My Account) - ExamHub'
+      }
+    },
+    {
       path: '/exams',
       redirect: '/student/exams'
     },
