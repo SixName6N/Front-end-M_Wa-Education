@@ -27,13 +27,13 @@ export function toApiQuestion(question, index) {
   }
 
   // ตอบสั้น → เก็บคำตอบที่ยอมรับทั้งหมดไว้ใน referenceText
-  if (question?.type === 'short_answer') {
-    return {
-      ...base,
-      type: 'SHORT_ANSWER',
-      referenceText: (question.acceptableKeys ?? []).join(', ') || null
-    }
-  }
+  // if (question?.type === 'short_answer') {
+  //   return {
+  //     ...base,
+  //     type: 'SHORT_ANSWER',
+  //     referenceText: (question.acceptableKeys ?? []).join(', ') || null
+  //   }
+  // }
 
   // เขียนบรรยาย → backend ไม่มีฟิลด์ rubric จึงสรุปเกณฑ์ไว้ใน referenceText
   return {

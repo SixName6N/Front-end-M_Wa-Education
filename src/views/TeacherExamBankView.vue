@@ -38,6 +38,16 @@
         </div>
       </section>
 
+      <!-- PAGE ACTION FEEDBACK BANNER -->
+      <div
+        v-if="pageFeedback.message"
+        class="bank-feedback-banner"
+        :style="pageFeedback.type === 'error' ? 'margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; display: flex; justify-content: space-between; align-items: center; font-size: 14px;' : 'margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; display: flex; justify-content: space-between; align-items: center; font-size: 14px;'"
+      >
+        <span>{{ pageFeedback.message }}</span>
+        <button type="button" @click="pageFeedback.message = ''" style="background:none; border:none; cursor:pointer; color:inherit; font-weight:bold;">✕</button>
+      </div>
+
       <!-- COURSE SELECT TABS -->
       <div class="bank-course-tabs">
         <button
@@ -233,6 +243,14 @@
           </div>
 
           <form @submit.prevent="submitCreateExam" class="bank-modal-body">
+            <div
+              v-if="createError"
+              class="bank-modal-error"
+              style="padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #991b1b; font-size: 13px;"
+            >
+              {{ createError }}
+            </div>
+
             <div>
               <label class="bank-form-label">ชื่อชุดข้อสอบ</label>
               <input
@@ -296,6 +314,13 @@
             <p class="bank-modal-desc">
               คุณกำลังจะลบชุดข้อสอบ <strong>"{{ examToDelete?.title || 'ชุดข้อสอบ' }}"</strong> ข้อมูลคะแนนและประวัติการสอบของผู้เรียนที่เกี่ยวข้องอาจถูกระงับชั่วคราว
             </p>
+            <div
+              v-if="deleteError"
+              class="bank-modal-error"
+              style="padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #991b1b; font-size: 13px; margin-top: 8px;"
+            >
+              {{ deleteError }}
+            </div>
           </div>
           <div class="bank-modal-footer" style="padding-top: 8px;">
             <button
@@ -338,6 +363,9 @@ const searchQuery = ref('')
 const showCreateModal = ref(false)
 const showDeleteModal = ref(false)
 const examToDelete = ref(null)
+const createError = ref('')
+const deleteError = ref('')
+const pageFeedback = reactive({ message: '', type: 'error' })
 
 const createForm = reactive({
   title: '',
@@ -493,6 +521,7 @@ const handleImportClick = () => {
 const openCreateModal = async () => {
   createForm.title = ''
   createForm.duration = 60
+  createError.value = ''
 
   if (courses.value.length === 0) {
     await fetchCourses()
@@ -503,6 +532,7 @@ const openCreateModal = async () => {
 }
 
 const submitCreateExam = async () => {
+  createError.value = ''
   let createdId = null
   try {
     const payload = {
@@ -526,19 +556,22 @@ const submitCreateExam = async () => {
       }
     })
   } catch (err) {
-    alert(`ไม่สามารถสร้างชุดข้อสอบได้: ${err.message}`)
+    console.error('รายละเอียดข้อผิดพลาดการสร้างชุดข้อสอบ (Console Only):', err.technical || err.message || err)
+    createError.value = 'ไม่สามารถสร้างชุดข้อสอบได้ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง'
   }
 }
 
 // Delete actions
 const triggerDelete = (exam) => {
   examToDelete.value = exam
+  deleteError.value = ''
   showDeleteModal.value = true
 }
 
 const executeDelete = async () => {
   if (examToDelete.value) {
     const targetId = examToDelete.value.id
+    deleteError.value = ''
     try {
       if (typeof targetId === 'string' && targetId.length > 10) {
         await examService.deleteExam(targetId, { force: true })
@@ -547,12 +580,15 @@ const executeDelete = async () => {
       if (idx !== -1) {
         exams.value.splice(idx, 1)
       }
+      showDeleteModal.value = false
+      examToDelete.value = null
+      pageFeedback.message = 'ลบชุดข้อสอบเรียบร้อยแล้ว'
+      pageFeedback.type = 'success'
     } catch (err) {
-      alert(`ไม่สามารถลบชุดข้อสอบได้: ${err.message}`)
+      console.error('รายละเอียดข้อผิดพลาดการลบชุดข้อสอบ (Console Only):', err.technical || err.message || err)
+      deleteError.value = 'ไม่สามารถลบชุดข้อสอบได้ กรุณาลองใหม่อีกครั้ง'
     }
   }
-  showDeleteModal.value = false
-  examToDelete.value = null
 }
 </script>
 

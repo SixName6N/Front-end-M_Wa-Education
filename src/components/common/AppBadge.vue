@@ -1,8 +1,5 @@
 <template>
-  <span class="app-badge">
-    <span v-if="dot" class="app-badge__dot"></span>
-    <slot />
-  </span>
+  <div></div>
 </template>
 
 <script setup>
