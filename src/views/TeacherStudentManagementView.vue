@@ -17,6 +17,15 @@
         ยังไม่มีห้องเรียนในระบบ — สร้างห้องเรียนก่อนแล้วจึงเพิ่มนักเรียนได้
       </p>
 
+      <!-- Hidden file input for CSV import -->
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept=".csv"
+        style="display: none;"
+        @change="onFileSelected"
+      />
+
       <!-- Main Workspace: Table (Left 8 cols) + Add Form (Right 4 cols) -->
       <div class="student-mgmt-grid">
         <!-- Left: Student Table -->
@@ -25,7 +34,7 @@
             :students="filteredStudents"
             v-model:search-query="searchQuery"
             :total-count="students.length"
-            :loading="loadingStudents"
+            :loading="loadingStudents || importingCsv"
             @import-csv="handleImportCsv"
             @export-data="handleExportData"
             @manage-student="handleRemoveStudent"
@@ -67,6 +76,8 @@ const searchQuery = ref('')
 const loadingClassrooms = ref(false)
 const loadingStudents = ref(false)
 const savingStudent = ref(false)
+const importingCsv = ref(false)
+const fileInputRef = ref(null)
 
 const pageError = ref('')
 const formError = ref('')
@@ -221,7 +232,44 @@ function clearFormFeedback() {
 }
 
 function handleImportCsv() {
-  alert('เปิดหน้าต่างนำเข้าไฟล์ CSV รายชื่อนักเรียน')
+  if (!selectedRoomId.value) {
+    pageError.value = 'กรุณาเลือกห้องเรียนก่อนนำเข้าไฟล์ CSV'
+    return
+  }
+  fileInputRef.value?.click()
+}
+
+async function onFileSelected(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  // ล้างค่าเพื่อให้เลือกไฟล์เดิมซ้ำได้ถ้าต้องการ
+  event.target.value = ''
+
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    pageError.value = 'กรุณาเลือกไฟล์นามสกุล .csv เท่านั้น'
+    return
+  }
+
+  importingCsv.value = true
+  pageError.value = ''
+
+  try {
+    const result = await studentService.importStudentsCsv(selectedRoomId.value, file)
+    const successMsg = result?.message || `นำเข้ารายชื่อนักเรียนจากไฟล์ "${file.name}" สำเร็จ`
+    alert(successMsg)
+
+    // โหลดรายชื่อจริงจากฐานข้อมูลหลังบันทึกเสร็จ (ไม่มีการ mock)
+    await loadStudents()
+    await loadClassrooms({ silent: true })
+  } catch (error) {
+    console.error('รายละเอียดข้อผิดพลาดการนำเข้าไฟล์ CSV (Console Only):', error.technical || error.message || error)
+    const errorMsg = 'นำเข้าข้อมูลไม่สำเร็จ'
+    pageError.value = errorMsg
+    alert(errorMsg)
+  } finally {
+    importingCsv.value = false
+  }
 }
 
 async function handleExportData() {

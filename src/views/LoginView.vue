@@ -88,13 +88,7 @@
             autocomplete="current-password"
           >
             <template #label-right>
-              <a
-                href="/forgot-password"
-                class="login-card__forgot-link"
-                @click.prevent="handleForgotPassword"
-              >
-                ลืมรหัสผ่าน?
-              </a>
+             
             </template>
             <template #prefix>
               <IconLock size="18" />
