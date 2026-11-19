@@ -50,6 +50,38 @@
   background-color: #dbeafe;
 }
 
+/* รายการบัญชีที่เพิ่งนำเข้า (ใน AppStateNotice) — ชื่อ + อีเมล + รหัสผ่าน */
+.student-mgmt-import-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.student-mgmt-import-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+}
+
+.student-mgmt-import-item__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+}
+
+.student-mgmt-import-item__email {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
 /* 12-column workspace grid */
 .student-mgmt-grid {
   display: grid;

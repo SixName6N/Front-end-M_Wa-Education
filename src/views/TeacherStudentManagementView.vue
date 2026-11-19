@@ -52,6 +52,41 @@
         </button>
       </AppStateNotice>
 
+      <!-- ผลการนำเข้ารายชื่อ: โชว์รหัสผ่านชั่วคราวของบัญชีที่สร้างใหม่ให้ครูคัดลอกส่งนักเรียน -->
+      <AppStateNotice
+        v-if="importResult"
+        variant="info"
+        title="นำเข้ารายชื่อนักเรียนเรียบร้อย"
+        :message="importResult.message"
+      >
+        <ul v-if="importResult.accounts.length > 0" class="student-mgmt-import-list">
+          <li
+            v-for="item in importResult.accounts"
+            :key="item.email"
+            class="student-mgmt-import-item"
+          >
+            <span class="student-mgmt-import-item__name">{{ item.name }}</span>
+            <span class="student-mgmt-import-item__email">{{ item.email }}</span>
+            <code class="student-mgmt-password">{{ item.password }}</code>
+          </li>
+        </ul>
+        <button
+          v-if="importResult.accounts.length > 0"
+          type="button"
+          class="student-mgmt-btn"
+          @click="copyImportPasswords"
+        >
+          {{ copiedImport ? 'คัดลอกแล้ว ✓' : 'คัดลอกรหัสทั้งหมด' }}
+        </button>
+        <button
+          type="button"
+          class="student-mgmt-btn student-mgmt-btn--ghost"
+          @click="importResult = null"
+        >
+          ปิด
+        </button>
+      </AppStateNotice>
+
       <!-- Hidden file input สำหรับนำเข้ารายชื่อนักเรียนจาก CSV -->
       <input
         ref="fileInputRef"
@@ -129,6 +164,11 @@ const busyStudentId = ref('')
 const resetResult = ref(null)
 const copiedPassword = ref(false)
 let copyTimer = null
+
+/** ผลการนำเข้ารายชื่อ: { message, accounts: [{ name, email, password }] } */
+const importResult = ref(null)
+const copiedImport = ref(false)
+let importCopyTimer = null
 
 /** hidden input สำหรับนำเข้ารายชื่อนักเรียนจากไฟล์ CSV */
 const fileInputRef = ref(null)
@@ -356,6 +396,38 @@ async function copyResetPassword() {
   }
 }
 
+/** คัดลอกรหัสผ่านของบัญชีที่เพิ่งนำเข้าทั้งหมด (ชื่อ อีเมล รหัสผ่าน) */
+async function copyImportPasswords() {
+  const accounts = importResult.value?.accounts ?? []
+  if (accounts.length === 0) return
+
+  const text = accounts.map((item) => `${item.name} (${item.email}) : ${item.password}`).join('\n')
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const area = document.createElement('textarea')
+      area.value = text
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      document.execCommand('copy')
+      area.remove()
+    }
+    copiedImport.value = true
+    if (importCopyTimer) clearTimeout(importCopyTimer)
+    importCopyTimer = setTimeout(() => {
+      copiedImport.value = false
+    }, 2000)
+  } catch (error) {
+    console.error('คัดลอกรหัสผ่านที่นำเข้าไม่สำเร็จ:', error)
+    setPageError(error, 'คัดลอกรหัสผ่านไม่สำเร็จ กรุณาคัดลอกจากข้อความโดยตรง')
+  }
+}
+
 /** ปุ่ม "ลองใหม่" บนกล่องแจ้ง error */
 function retryLoad() {
   if (classrooms.value.length === 0) {
@@ -395,10 +467,28 @@ async function onFileSelected(event) {
   importingCsv.value = true
   pageError.value = ''
   pageSuccess.value = ''
+  importResult.value = null
 
   try {
     const result = await studentService.importStudentsCsv(selectedRoomId.value, file)
-    pageSuccess.value = result?.message || `นำเข้ารายชื่อนักเรียนจากไฟล์ "${file.name}" สำเร็จ`
+
+    // โชว์รหัสผ่านชั่วคราวของบัญชีที่สร้างใหม่ให้ครูคัดลอกส่งนักเรียน
+    const accounts = (result?.students ?? [])
+      .filter((student) => student.status === 'created' && student.temporaryPassword)
+      .map((student) => ({
+        name: student.fullName,
+        email: student.email,
+        password: student.temporaryPassword
+      }))
+
+    if (accounts.length > 0) {
+      importResult.value = {
+        message: result?.message || `สร้างบัญชีใหม่ ${accounts.length} คน`,
+        accounts
+      }
+    } else {
+      pageSuccess.value = result?.message || `นำเข้ารายชื่อนักเรียนจากไฟล์ "${file.name}" สำเร็จ`
+    }
 
     // โหลดรายชื่อจริงจากฐานข้อมูลหลังบันทึกเสร็จ (ไม่มีการ mock)
     await loadStudents()
@@ -445,9 +535,11 @@ async function handleDownloadTemplate() {
 watch(selectedRoomId, () => {
   formError.value = ''
   formSuccess.value = null
-  // เปลี่ยนห้อง → ซ่อนรหัสผ่านที่เพิ่งรีเซ็ตของนักเรียนห้องเดิม
+  // เปลี่ยนห้อง → ซ่อนรหัสผ่านที่เพิ่งรีเซ็ต/นำเข้าของห้องเดิม
   resetResult.value = null
   copiedPassword.value = false
+  importResult.value = null
+  copiedImport.value = false
   loadStudents()
 })
 
@@ -455,6 +547,7 @@ onMounted(() => loadClassrooms())
 
 onBeforeUnmount(() => {
   if (copyTimer) clearTimeout(copyTimer)
+  if (importCopyTimer) clearTimeout(importCopyTimer)
 })
 </script>
 
