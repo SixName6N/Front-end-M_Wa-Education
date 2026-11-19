@@ -1,9 +1,10 @@
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { validateIdentifier, validatePassword } from '@/utils/validators'
 
 export function useAuth() {
+  const route = useRoute()
   const router = useRouter()
   const authStore = useAuthStore()
 
@@ -44,7 +45,10 @@ export function useAuth() {
         rememberMe: form.rememberMe
       })
       loginSuccessMessage.value = 'เข้าสู่ระบบสำเร็จ กำลังนำท่านเข้าสู่ระบบ...'
-      const destination = authStore.isTeacher ? '/teacher/students' : '/student/exams'
+      // ถ้ามาจากการถูกเด้งออก (มี ?redirect=) ให้กลับไปหน้าที่ตั้งใจไว้ก่อน
+      // ไม่งั้นพาไปหน้าหลักตามบทบาท (router guard จะคอยกันสิทธิ์ให้อีกชั้น)
+      const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+      const destination = redirect || (authStore.isTeacher ? '/teacher/students' : '/student/exams')
       setTimeout(() => {
         router.push(destination)
       }, 1000)

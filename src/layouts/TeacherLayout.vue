@@ -5,7 +5,7 @@
       <div class="teacher-navbar__inner">
         <!-- Left: Logo & Navigation Menu -->
         <div class="teacher-navbar__left">
-          <router-link to="/teacher/exams/" class="teacher-navbar__brand">
+          <router-link to="/teacher/exams" class="teacher-navbar__brand">
             <div class="teacher-navbar__logo">
               <IconExamHub size="18" />
             </div>
@@ -14,7 +14,7 @@
 
           <nav class="teacher-navbar__nav">
             <router-link
-              to="/teacher/exams/"
+              to="/teacher/exams"
               class="teacher-navbar__link"
               :class="{ 'teacher-navbar__link--active': isExamsActive }"
             >

@@ -79,6 +79,11 @@ async function request(method, endpoint, data) {
   const payload = parseJson(await response.text())
 
   if (!response.ok) {
+    // token หมดอายุ/ถูกเพิกถอนกลางทาง → ล้าง session แล้วให้แอปเด้งกลับหน้า login
+    if (response.status === 401 && !endpoint.startsWith('/auth/')) {
+      clearTokens()
+      window.dispatchEvent(new CustomEvent('examhub:unauthorized'))
+    }
     const error = payload?.error ?? {}
     throw new ApiError(error.message || `คำขอล้มเหลว (HTTP ${response.status})`, {
       status: response.status,

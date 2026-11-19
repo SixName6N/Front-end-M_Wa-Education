@@ -1,12 +1,17 @@
 import { defineStore } from 'pinia'
 import { USER_ROLES } from '@/constants/auth.constants'
-import { authService, hasStoredSession } from '@/services/authService'
+import { authService, clearStoredSession, hasStoredSession } from '@/services/authService'
+
+/** สัญญาการกู้ session ที่กำลังทำอยู่ — กันเรียก restore() ซ้ำพร้อมกันแล้วยิง API ซ้ำ */
+let restorePromise = null
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     currentRole: USER_ROLES.STUDENT,
     isAuthenticated: false,
+    /** ตรวจ token ที่เก็บไว้แล้วหรือยัง (กัน guard เรียก /auth/me ซ้ำทุกครั้งที่เปลี่ยนหน้า) */
+    sessionChecked: false,
     isLoading: false,
     error: null,
     session: 'Session 2/2568'
@@ -40,6 +45,7 @@ export const useAuthStore = defineStore('auth', {
     applySession(user) {
       this.user = user
       this.isAuthenticated = true
+      this.sessionChecked = true
       if (user?.role) this.currentRole = user.role
     },
 
@@ -61,17 +67,32 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /** กู้ session เดิมตอนเปิดแอป ถ้ามี token เก็บอยู่ */
+    /**
+     * กู้ session เดิมตอนเปิดแอป ถ้ามี token เก็บอยู่
+     * เรียกซ้ำได้ปลอดภัย: ตรวจครั้งเดียวต่ออายุแอป และรอ promise เดียวกันถ้าซ้อนกัน
+     */
     async restore() {
-      if (this.isAuthenticated || !hasStoredSession()) return
-      try {
-        const user = await authService.me()
-        this.applySession(user)
-      } catch {
-        // token หมดอายุ/ไม่ถูกต้อง — ถือว่ายังไม่ล็อกอิน
-        this.user = null
-        this.isAuthenticated = false
+      if (this.sessionChecked) return
+      if (!hasStoredSession()) {
+        this.sessionChecked = true
+        return
       }
+      if (!restorePromise) {
+        restorePromise = (async () => {
+          try {
+            const user = await authService.me()
+            this.applySession(user)
+          } catch {
+            // token หมดอายุ/ไม่ถูกต้อง — ล้างทิ้ง ถือว่ายังไม่ล็อกอิน
+            clearStoredSession()
+            this.user = null
+            this.isAuthenticated = false
+          } finally {
+            this.sessionChecked = true
+          }
+        })()
+      }
+      return restorePromise
     },
 
     async ssoLogin(provider) {
@@ -88,15 +109,23 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /** ล้าง session ฝั่ง client ทันที (ไม่เรียก API) — ใช้เมื่อ token หมดอายุ/ถูกเพิกถอน */
+    clearSession() {
+      clearStoredSession()
+      this.user = null
+      this.isAuthenticated = false
+      this.error = null
+      this.sessionChecked = true
+      restorePromise = null
+      // กลับไปค่าเริ่มต้น เพื่อให้หน้า login แสดงแท็บนักเรียนเป็นค่าเริ่มต้น
+      this.currentRole = USER_ROLES.STUDENT
+    },
+
     async logout() {
       try {
         await authService.logout()
       } finally {
-        this.user = null
-        this.isAuthenticated = false
-        this.error = null
-        // กลับไปค่าเริ่มต้น เพื่อให้หน้า login แสดงแท็บนักเรียนเป็นค่าเริ่มต้น
-        this.currentRole = USER_ROLES.STUDENT
+        this.clearSession()
       }
     }
   }
