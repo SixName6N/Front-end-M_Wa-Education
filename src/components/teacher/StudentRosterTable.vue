@@ -19,10 +19,12 @@
         <button
           type="button"
           class="roster-action-btn"
-          @click="$emit('import-csv')"
+          disabled
+          style="opacity: 0.6; cursor: not-allowed;"
+          title="ระบบนำเข้ารายชื่อจาก CSV กำลังอยู่ระหว่างการพัฒนาระบบหลังบ้าน"
         >
           <IconUpload size="15" />
-          <span>นำเข้า CSV</span>
+          <span>นำเข้า CSV (เร็วๆ นี้)</span>
         </button>
 
         <button

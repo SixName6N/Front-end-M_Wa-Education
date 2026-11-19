@@ -51,7 +51,6 @@
             :class="{ 'grading-tab-btn--active': activeTab === 'all' }"
             @click="activeTab = 'all'"
           >
-            <span class="material-symbols-outlined text-[16px]">menu_book</span>
             <span>ทั้งหมด</span>
             <span class="grading-tab-badge">{{ pendingExams.length + completedExams.length }} ชุด</span>
           </button>
@@ -62,7 +61,7 @@
             :class="{ 'grading-tab-btn--active': activeTab === 'pending' }"
             @click="activeTab = 'pending'"
           >
-            <span class="material-symbols-outlined text-[16px]">assignment_late</span>
+
             <span>งานที่ต้องตรวจ</span>
             <span class="grading-tab-badge">{{ pendingExams.length }} ชุด</span>
           </button>
@@ -73,7 +72,7 @@
             :class="{ 'grading-tab-btn--active': activeTab === 'completed' }"
             @click="activeTab = 'completed'"
           >
-            <span class="material-symbols-outlined text-[16px]">task_alt</span>
+           
             <span>ตรวจเสร็จแล้ว / ดูผลคะแนน</span>
             <span class="grading-tab-badge">{{ completedExams.length }} ชุด</span>
           </button>
@@ -1127,10 +1126,16 @@ async function handleReleaseAllResults(examId) {
   gradingActionLoading.value = true
   modalFeedback.message = ''
   try {
-    await gradingService.releaseExamResults(examId)
+    const res = await gradingService.releaseExamResults(examId)
     gradingSubmissions.value = await gradingService.listExamSubmissions(examId)
     await fetchGradingData()
-    modalFeedback.message = 'ปล่อยผลสอบทั้งชุดให้นักเรียนทุกคนเรียบร้อยแล้ว'
+    const releasedCount = res?.released ?? res?.count ?? null
+    const skippedCount = res?.skipped ?? null
+    if (releasedCount !== null) {
+      modalFeedback.message = `ปล่อยผลสอบเรียบร้อยแล้ว (${releasedCount} คน${skippedCount ? `, ข้าม ${skippedCount} คนที่ยังตรวจไม่เสร็จ` : ''})`
+    } else {
+      modalFeedback.message = 'ปล่อยผลสอบทั้งชุดให้นักเรียนทุกคนเรียบร้อยแล้ว'
+    }
     modalFeedback.type = 'success'
   } catch (err) {
     console.error('รายละเอียดข้อผิดพลาดปล่อยผลสอบทั้งชุด (Console Only):', err.technical || err.message || err)

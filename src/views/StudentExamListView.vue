@@ -146,6 +146,78 @@
 
       <!-- 6. Exam Regulations & Guidelines Footer Banner -->
       <ExamGuidelines />
+
+      <!-- 7. Result Review Modal (ผลคะแนนสอบจริงจาก API) -->
+      <div
+        v-if="showResultModal"
+        class="exam-result-modal-overlay"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;"
+        @click.self="showResultModal = false"
+      >
+        <div style="background: white; border-radius: 14px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">
+              ผลคะแนนการสอบ
+            </h3>
+            <button
+              type="button"
+              style="background:none; border:none; cursor:pointer; font-size: 20px; color: #64748b;"
+              @click="showResultModal = false"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div v-if="resultLoading" style="text-align: center; padding: 32px 0; color: #64748b;">
+            <div class="exam-spinner" style="margin: 0 auto 12px;"></div>
+            <p style="margin: 0; font-size: 14px;">กำลังโหลดผลคะแนนจากระบบ...</p>
+          </div>
+
+          <div v-else-if="resultError" style="margin-bottom: 16px;">
+            <AppStateNotice
+              variant="error"
+              title="ไม่สามารถโหลดผลคะแนนได้"
+              :message="resultError"
+              compact
+            />
+          </div>
+
+          <div v-else-if="examResult" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+              <h4 style="margin: 0 0 6px; font-size: 16px; font-weight: 600; color: #0f172a;">
+                {{ examResult.exam?.title || selectedExamTitle }}
+              </h4>
+              <p style="margin: 0; font-size: 13px; color: #64748b;">
+                สถานะ: <span style="font-weight: 600; color: #10b981;">ประกาศผลสอบเรียบร้อยแล้ว</span>
+              </p>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: center; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 20px;">
+              <div style="text-align: center;">
+                <div style="font-size: 13px; color: #047857; font-weight: 500; margin-bottom: 4px;">คะแนนที่ได้</div>
+                <div style="font-size: 36px; font-weight: 800; color: #065f46; line-height: 1;">
+                  {{ examResult.score ?? examResult.totalScore ?? '-' }}
+                  <span style="font-size: 18px; font-weight: 500; color: #047857;">/ {{ examResult.exam?.totalsPoints ?? examResult.exam?.totalPoints ?? examResult.totalPoints ?? '-' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="examResult.feedback" style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px; font-size: 13px; color: #0369a1;">
+              <strong>ข้อเสนอแนะจากผู้ตรวจ:</strong> {{ examResult.feedback }}
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; text-align: right;">
+            <button
+              type="button"
+              style="background: #015b7e; color: white; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;"
+              @click="showResultModal = false"
+            >
+              ปิดหน้าต่าง
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </StudentLayout>
 </template>
@@ -246,10 +318,10 @@ function mapExamForCard(exam) {
     (Array.isArray(exam.questions) ? exam.questions.length : (exam.questionsCount ?? 0))
 
   const totalPoints =
-    exam.totalPoints ??
+    Number(exam.totalsPoints ?? exam.totalPoints) ||
     (Array.isArray(exam.questions)
       ? exam.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0)
-      : (exam.maxScore ?? 0))
+      : (Number(exam.maxScore) || 0))
 
   const code = exam.code || exam.course?.code || exam.courseCode || 'EXAM'
   const subject = exam.subject || exam.course?.title || exam.course?.name || 'รายวิชาทั่วไป'
@@ -266,8 +338,8 @@ function mapExamForCard(exam) {
     exam.course?.department ||
     'กลุ่มสาระการเรียนรู้'
 
-  const durationMin = exam.timeLimitMinutes || exam.durationMinutes || exam.duration || 60
-  const duration = `${durationMin} นาที`
+  const rawDuration = exam.timeLimitMinutes ?? exam.durationMinutes ?? exam.duration
+  const duration = rawDuration !== null && rawDuration !== undefined ? `${rawDuration} นาที` : 'ไม่จำกัดเวลา'
   const questions = `${questionsCount} ข้อ`
 
   let statusText = exam.statusText || ''
@@ -292,7 +364,7 @@ function mapExamForCard(exam) {
     : (exam.submittedAt ? `ส่งเมื่อ ${formatDateThai(exam.submittedAt)}` : '')
   const summaryText =
     exam.summaryText ||
-    `ปรนัย ${questionsCount} ข้อ • เวลาที่กำหนด ${durationMin} นาที`
+    `ปรนัย ${questionsCount} ข้อ • เวลาที่กำหนด ${duration}`
   const evaluationText =
     exam.evaluationText ||
     (score >= maxScoreNum * 0.5 ? 'ผ่านเกณฑ์การประเมิน' : 'ไม่ผ่านเกณฑ์การประเมิน')
@@ -357,7 +429,10 @@ function mapExamForCard(exam) {
     grade,
     submittedAt,
     summaryText,
-    evaluationText
+    evaluationText,
+    mySubmission: sub ?? null,
+    submissionId: sub?.id ?? null,
+    submissionStatus: sub?.status ?? null
   }
 }
 
@@ -462,14 +537,51 @@ const handleStartExam = async (exam) => {
   }
 }
 
-const handleReviewExam = (exam) => {
+const showResultModal = ref(false)
+const resultLoading = ref(false)
+const resultError = ref('')
+const examResult = ref(null)
+const selectedExamTitle = ref('')
+
+const handleReviewExam = async (cardExam) => {
+  // ค้นหาข้อมูล submission จาก cardExam หรือค้นจาก rawExams ด้วย exam ID
+  const rawExam = rawExams.value.find((e) => e.id === cardExam?.id)
+  const sub = cardExam?.mySubmission || rawExam?.mySubmission
+  const submissionId = sub?.id || cardExam?.submissionId
+  const submissionStatus = sub?.status || cardExam?.submissionStatus
+
+  if (!submissionId) {
+    actionNotice.message = `ไม่พบข้อมูลการส่งข้อสอบของ "${cardExam?.title || 'ชุดข้อสอบนี้'}"`
+    actionNotice.type = 'warning'
+    return
+  }
+
+  if (submissionStatus !== 'RELEASED') {
+    if (submissionStatus === 'SUBMITTED') {
+      actionNotice.message = `ชุดข้อสอบ "${cardExam.title}" ส่งเรียบร้อยแล้ว อยู่ระหว่างรอคุณครูตรวจคะแนน`
+    } else if (submissionStatus === 'GRADED') {
+      actionNotice.message = `ชุดข้อสอบ "${cardExam.title}" ตรวจเรียบร้อยแล้ว อยู่ระหว่างรอคุณครูประกาศผลอย่างเป็นทางการ`
+    } else {
+      actionNotice.message = `ชุดข้อสอบ "${cardExam.title}" ยังไม่ได้ประกาศผลสอบอย่างเป็นทางการ กรุณารอคุณครูผู้สอนประกาศผล`
+    }
+    actionNotice.type = 'warning'
+    return
+  }
+
+  selectedExamTitle.value = cardExam.title
+  showResultModal.value = true
+  resultLoading.value = true
+  resultError.value = ''
+  examResult.value = null
+
   try {
-    actionNotice.message = `เปิดดูผลคะแนนและคำอธิบายเฉลยของ "${exam.title}" (ระบบตรวจข้อสอบจริงกำลังเชื่อมต่อ)`
-    actionNotice.type = 'info'
+    const result = await studentExamService.getResult(submissionId)
+    examResult.value = result
   } catch (err) {
     console.error('รายละเอียดข้อผิดพลาดเปิดดูผลคะแนน (Console Only):', err)
-    actionNotice.message = 'ไม่สามารถดูผลคะแนนได้ กรุณาลองใหม่อีกครั้ง'
-    actionNotice.type = 'error'
+    resultError.value = err?.message || 'ไม่สามารถโหลดผลคะแนนได้ กรุณาลองใหม่อีกครั้ง'
+  } finally {
+    resultLoading.value = false
   }
 }
 </script>

@@ -141,7 +141,7 @@
               <span class="bank-meta-dot">•</span>
               <span>{{ exam.totalPoints ?? exam.maxScore ?? 0 }} คะแนน</span>
               <span class="bank-meta-dot">•</span>
-              <span>เวลา {{ exam.duration || 60 }} นาที</span>
+              <span>{{ exam.durationText || (exam.duration !== null && exam.duration !== undefined ? `เวลา ${exam.duration} นาที` : 'ไม่จำกัดเวลา') }}</span>
               <span v-if="exam.scheduleInfo" class="bank-meta-dot">•</span>
               <span v-if="exam.scheduleInfo" :class="exam.highlightClass">{{ exam.scheduleInfo }}</span>
             </div>

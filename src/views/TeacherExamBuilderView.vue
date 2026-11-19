@@ -7,9 +7,7 @@
         <nav aria-label="Breadcrumb" class="eb-breadcrumb">
           <router-link to="/teacher/exams" class="eb-breadcrumb__link">คลังข้อสอบ</router-link>
           <span class="material-symbols-outlined eb-breadcrumb__sep">chevron_right</span>
-          <span class="eb-breadcrumb__link">วิชาวิทยาศาสตร์และเทคโนโลยี ม.3</span>
-          <span class="material-symbols-outlined eb-breadcrumb__sep">chevron_right</span>
-          <span class="eb-breadcrumb__current">สร้างชุดข้อสอบใหม่</span>
+          <span class="eb-breadcrumb__current">{{ metadata.title || 'สร้างชุดข้อสอบใหม่' }}</span>
         </nav>
 
         <!-- Exam Header / Title & Actions -->
@@ -29,14 +27,18 @@
 
             <!-- Metadata Tags -->
             <div class="eb-meta-tags">
-              <span class="eb-tag eb-tag--pill">
+              <span v-if="metadata.subjectCode" class="eb-tag eb-tag--pill">
                 <span class="material-symbols-outlined eb-tag-icon">tag</span>
                 รหัสวิชา {{ metadata.subjectCode }}
               </span>
-              <span class="eb-dot">•</span>
-              <span>{{ metadata.semester }}</span>
-              <span class="eb-dot">•</span>
-              <span class="eb-tag-target">เป้าหมาย {{ metadata.targetScore }} คะแนน</span>
+              <template v-if="metadata.semester">
+                <span v-if="metadata.subjectCode" class="eb-dot">•</span>
+                <span>{{ metadata.semester }}</span>
+              </template>
+              <template v-if="metadata.targetScore">
+                <span class="eb-dot">•</span>
+                <span class="eb-tag-target">เป้าหมาย {{ metadata.targetScore }} คะแนน</span>
+              </template>
               <span class="eb-dot">•</span>
               <span>เวลาสอบ {{ metadata.durationMinutes }} นาที</span>
               <span class="eb-dot">•</span>
@@ -60,10 +62,11 @@
             <button
               type="button"
               class="eb-btn eb-btn--primary"
+              :disabled="publishBusy"
               @click="handlePublish"
             >
               <span class="material-symbols-outlined">publish</span>
-              <span>บันทึกและเผยแพร่</span>
+              <span>{{ publishBusy ? 'กำลังเผยแพร่...' : 'บันทึกและเผยแพร่' }}</span>
             </button>
           </div>
         </div>
@@ -1222,14 +1225,15 @@ const thaiLabels = ['ก.', 'ข.', 'ค.', 'ง.', 'จ.', 'ฉ.']
 const newForm = reactive({
   type: 'choice',
   score: 1,
-  prompt: 'เมื่อปล่อยลูกบอลให้ตกอย่างอิสระในแนวดิ่งภายใต้แรงโน้มถ่วงของโลก (โดยไม่คิดแรงต้านอากาศ) ข้อใดกล่าวถูกต้องที่สุด?',
+  prompt: '',
+  explanation: '',
   choices: [
-    { id: 'c1', label: 'ก.', text: 'แรงลัพธ์มีค่าเท่ากับศูนย์', isCorrect: true },
-    { id: 'c2', label: 'ข.', text: 'วัตถุเคลื่อนที่ด้วยความเร่งคงที่สม่ำเสมอ', isCorrect: false },
-    { id: 'c3', label: 'ค.', text: 'มวลของวัตถุมีค่าเป็นศูนย์เมื่ออยู่ในอวกาศ', isCorrect: false },
-    { id: 'c4', label: 'ง.', text: 'แรงเสียดทานมีทิศเดียวกับการเคลื่อนที่ของวัตถุ', isCorrect: false }
+    { id: 'c1', label: 'ก.', text: '', isCorrect: true },
+    { id: 'c2', label: 'ข.', text: '', isCorrect: false },
+    { id: 'c3', label: 'ค.', text: '', isCorrect: false },
+    { id: 'c4', label: 'ง.', text: '', isCorrect: false }
   ],
-  acceptableKeys: ['ความเร่ง', 'g', '9.8'],
+  acceptableKeys: [],
   tfCorrect: true
 })
 
@@ -1500,7 +1504,9 @@ onMounted(async () => {
       applyExamDetail(remoteExam)
       questionsPersisted.value = true
     } catch (err) {
-      console.warn('Backend load note:', err.message)
+      console.error('รายละเอียดข้อผิดพลาดโหลดชุดข้อสอบ (Console Only):', err)
+      builderFeedback.message = `โหลดข้อมูลชุดข้อสอบไม่สำเร็จ: ${err.message || 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้'}`
+      builderFeedback.type = 'error'
     }
   }
 
@@ -1563,6 +1569,7 @@ const buildQuestionPayload = (q) => ({
   type: localQuestionType(q),
   prompt: q.prompt,
   points: Number(q.score) || 1,
+  explanation: q.explanation ? String(q.explanation).trim() : null,
   ...(q.type === 'short_answer'
     ? { referenceText: (q.acceptableKeys ?? []).join('\n') || null }
     : {}),
@@ -1656,7 +1663,9 @@ const applyExamDetail = (remote) => {
     minPercent: Number(c.minPercent)
   }))
 
-  if (remote.questions?.length) questions.value = remote.questions.map(mapRemoteQuestion)
+  if (Array.isArray(remote.questions)) {
+    questions.value = remote.questions.map(mapRemoteQuestion)
+  }
 }
 
 /**
@@ -1689,6 +1698,7 @@ const reloadQuestionsFromServer = async (examId) => {
 // ---------------------------------------------------------------------------
 
 let autoSaveTimer = null
+let activeAutoSavePromise = null
 const pendingQuestionPatches = new Set()
 
 const queueAutoSave = (question = null) => {
@@ -1698,24 +1708,49 @@ const queueAutoSave = (question = null) => {
 }
 
 const runAutoSave = async () => {
-  autoSaveTimer = null
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer)
+    autoSaveTimer = null
+  }
+
+  // ถ้าระหว่างนี้มี request บันทึกที่กำลังทำงานอยู่ ให้รอจนเสร็จสิ้นก่อน
+  if (activeAutoSavePromise) {
+    try {
+      await activeAutoSavePromise
+    } catch {
+      // รอให้เสร็จ แล้วจัดการคิวที่เหลือ
+    }
+  }
 
   if (!draftExamId.value) {
     metadata.lastSavedText = 'ยังไม่ได้บันทึก — ระบบจะบันทึกเมื่อเพิ่มข้อสอบ'
-    return
+    return true
   }
 
   const examId = draftExamId.value
   const patches = [...pendingQuestionPatches]
   pendingQuestionPatches.clear()
 
-  try {
-    await examService.updateExam(examId, buildExamPayload())
-    for (const q of patches) await persistQuestionPatch(examId, q)
-    metadata.lastSavedText = `บันทึกล่าสุด ${new Date().toLocaleTimeString('th-TH')}`
-  } catch (err) {
-    metadata.lastSavedText = `บันทึกอัตโนมัติไม่สำเร็จ: ${err.message}`
-  }
+  activeAutoSavePromise = (async () => {
+    try {
+      await examService.updateExam(examId, buildExamPayload())
+      for (const q of patches) {
+        await persistQuestionPatch(examId, q)
+      }
+      metadata.lastSavedText = `บันทึกล่าสุด ${new Date().toLocaleTimeString('th-TH')}`
+      return true
+    } catch (err) {
+      // นำรายการที่ยังบันทึกไม่ผ่านกลับเข้า pending เพื่อไม่ให้ข้อมูลสูญหาย และสามารถ retry ได้
+      patches.forEach((p) => pendingQuestionPatches.add(p))
+      metadata.lastSavedText = `บันทึกอัตโนมัติไม่สำเร็จ: ${err.message}`
+      console.error('รายละเอียดข้อผิดพลาดบันทึกอัตโนมัติ (Console Only):', err)
+      throw err
+    } finally {
+      activeAutoSavePromise = null
+    }
+  })()
+
+  return activeAutoSavePromise
 }
 
 /** เรียกจากหน้าจอเมื่อแก้ไขค่าที่ต้องบันทึก (โจทย์/คะแนน/metadata) */
@@ -1916,14 +1951,26 @@ const saveSettings = async () => {
   }
 }
 
+const publishBusy = ref(false)
+
 const handlePublish = async () => {
+  if (publishBusy.value) return
+  publishBusy.value = true
+  builderFeedback.message = ''
+
   try {
     const examId = await ensureDraftExam()
 
-    // บันทึก metadata + คำถามที่ยังค้างอยู่ให้ครบก่อนเผยแพร่
+    // 1. บันทึก metadata + คำถามที่ยังค้างอยู่ให้ครบก่อนเผยแพร่
     await examService.updateExam(examId, buildExamPayload())
     await flushUnpersistedQuestions(examId)
+
+    // 2. รัน autoSave และรอให้เสร็จสิ้น — หากล้มเหลวจะโยน error เพื่อหยุดการเผยแพร่ทันที
     await runAutoSave()
+
+    if (pendingQuestionPatches.size > 0) {
+      throw new Error(`ยังมีคำถาม ${pendingQuestionPatches.size} ข้อที่กำลังบันทึกไม่สำเร็จ กรุณากดลองใหม่ก่อนเผยแพร่`)
+    }
 
     const detail = await examService.getExamDetail(examId)
     if ((detail?.assignments?.length ?? 0) === 0) {
@@ -1942,8 +1989,10 @@ const handlePublish = async () => {
     }, 600)
   } catch (err) {
     console.error('รายละเอียดข้อผิดพลาดการเผยแพร่ชุดข้อสอบ (Console Only):', err.technical || err.message || err)
-    builderFeedback.message = 'เกิดข้อผิดพลาดในการเผยแพร่ชุดข้อสอบ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง'
+    builderFeedback.message = err?.message || 'เกิดข้อผิดพลาดในการเผยแพร่ชุดข้อสอบ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง'
     builderFeedback.type = 'error'
+  } finally {
+    publishBusy.value = false
   }
 }
 

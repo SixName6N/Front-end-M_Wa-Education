@@ -4,8 +4,10 @@
     <div>
       <div class="teacher-header-stats__breadcrumb">
         <span>ห้องเรียน</span>
-        <IconChevronRight size="12" />
-        <span>{{ session }}</span>
+        <template v-if="session">
+          <IconChevronRight size="12" />
+          <span>{{ session }}</span>
+        </template>
       </div>
       <h1 class="teacher-header-stats__title">จัดการรายชื่อนักเรียน</h1>
     </div>
@@ -50,9 +52,12 @@
 <script setup>
 import IconChevronRight from '@/components/icons/IconChevronRight.vue'
 import ClassroomPicker from '@/components/common/ClassroomPicker.vue'
-import { TEACHER_PROFILE } from '@/constants/teacher.constants'
 
 defineProps({
+  session: {
+    type: String,
+    default: ''
+  },
   selectedRoom: {
     type: String,
     default: ''
@@ -72,8 +77,6 @@ defineProps({
 })
 
 defineEmits(['update:selectedRoom'])
-
-const session = TEACHER_PROFILE.academicSession
 </script>
 
 <style scoped src="@/assets/styles/components/teacher-header-stats.css"></style>

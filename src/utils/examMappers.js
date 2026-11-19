@@ -25,9 +25,10 @@ export function mapApiExamToView(item) {
     statusText: mapped.statusText,
     title: item.title,
     questionsCount: item._count?.questions ?? item.questions?.length ?? 0,
-    totalPoints: item.totalPoints ?? (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
-    maxScore: item.totalPoints ?? (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
-    duration: item.timeLimitMinutes || 60,
+    totalPoints: Number(item.totalsPoints ?? item.totalPoints) || (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
+    maxScore: Number(item.totalsPoints ?? item.totalPoints) || (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
+    duration: item.timeLimitMinutes !== null && item.timeLimitMinutes !== undefined ? item.timeLimitMinutes : null,
+    durationText: item.timeLimitMinutes !== null && item.timeLimitMinutes !== undefined ? `${item.timeLimitMinutes} นาที` : 'ไม่จำกัดเวลา',
     scheduleInfo: item.updatedAt
       ? `แก้ไขล่าสุด ${new Date(item.updatedAt).toLocaleDateString('th-TH')}`
       : 'พร้อมใช้งาน',
@@ -66,12 +67,12 @@ export function toApiQuestion(question, index) {
     }
   }
 
-  // ตอบสั้น → เก็บคำตอบที่ยอมรับทั้งหมดไว้ใน referenceText
+  // ตอบสั้น → เก็บคำตอบที่ยอมรับทั้งหมดไว้ใน referenceText (แยกด้วย newline ป้องกันปัญหาคำตอบมี comma)
   if (question?.type === 'short_answer') {
     return {
       ...base,
       type: 'SHORT_ANSWER',
-      referenceText: (question.acceptableKeys ?? []).join(', ') || null
+      referenceText: (question.acceptableKeys ?? []).join('\n') || null
     }
   }
 

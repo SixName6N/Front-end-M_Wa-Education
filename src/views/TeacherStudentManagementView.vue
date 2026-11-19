@@ -372,11 +372,7 @@ function clearFormFeedback() {
 }
 
 function handleImportCsv() {
-  if (!selectedRoomId.value) {
-    pageError.value = 'กรุณาเลือกห้องเรียนก่อนนำเข้าไฟล์ CSV'
-    return
-  }
-  fileInputRef.value?.click()
+  pageError.value = 'ฟังก์ชันนำเข้ารายชื่อนักเรียนจากไฟล์ CSV ยังไม่เปิดให้บริการในเวอร์ชันนี้'
 }
 
 async function onFileSelected(event) {

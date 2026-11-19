@@ -8,16 +8,16 @@ export const USER_ROLES = {
 export const ROLE_CONFIG = {
   [USER_ROLES.STUDENT]: {
     labelTh: 'นักเรียน (Student)',
-    idLabelTh: 'รหัสนักเรียน หรือ อีเมลโรงเรียน',
-    idLabelEn: 'Student ID',
-    placeholder: 'เช่น 65030140 หรือ student@school.ac.th',
+    idLabelTh: 'อีเมลโรงเรียน',
+    idLabelEn: 'School Email',
+    placeholder: 'เช่น student@school.ac.th',
     registerText: 'ลงทะเบียนนักเรียนใหม่'
   },
   [USER_ROLES.TEACHER]: {
     labelTh: 'ครูผู้สอน (Teacher)',
-    idLabelTh: 'รหัสประจำตัวครู หรือ อีเมลโรงเรียน',
-    idLabelEn: 'Teacher ID',
-    placeholder: 'เช่น 1002345 หรือ teacher@school.ac.th',
+    idLabelTh: 'อีเมลโรงเรียน',
+    idLabelEn: 'School Email',
+    placeholder: 'เช่น teacher@school.ac.th',
     registerText: 'ลงทะเบียนสำหรับอาจารย์/ผู้สอน'
   }
 }

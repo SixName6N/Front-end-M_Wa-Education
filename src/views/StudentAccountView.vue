@@ -39,17 +39,9 @@
           <h2 class="student-account-card__title">เปลี่ยนรหัสผ่าน</h2>
 
           <AppStateNotice
-            v-if="errorMessage"
-            variant="error"
-            title="เปลี่ยนรหัสผ่านไม่สำเร็จ"
-            :message="errorMessage"
-            compact
-          />
-          <AppStateNotice
-            v-else-if="successMessage"
-            variant="info"
-            title="เปลี่ยนรหัสผ่านเรียบร้อย"
-            :message="successMessage"
+            variant="warning"
+            title="ฟังก์ชันยังไม่เปิดให้บริการ"
+            message="ระบบเปลี่ยนรหัสผ่านผ่านเว็บกำลังอยู่ระหว่างการพัฒนา หากต้องการรีเซ็ตรหัสผ่าน กรุณาติดต่อคุณครูผู้สอนหรือฝ่ายทะเบียน"
             compact
           />
 
@@ -62,7 +54,7 @@
               placeholder="กรอกรหัสผ่านที่ใช้อยู่"
               autocomplete="current-password"
               :error="fieldErrors.currentPassword"
-              :disabled="submitting"
+              disabled
             />
             <AppInput
               id="new-password"
@@ -72,7 +64,7 @@
               placeholder="อย่างน้อย 8 ตัวอักษร"
               autocomplete="new-password"
               :error="fieldErrors.newPassword"
-              :disabled="submitting"
+              disabled
             />
             <AppInput
               id="confirm-password"
@@ -82,17 +74,17 @@
               placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
               autocomplete="new-password"
               :error="fieldErrors.confirmPassword"
-              :disabled="submitting"
+              disabled
             />
 
             <div class="student-account-form__actions">
-              <AppButton type="submit" variant="primary" :loading="submitting">
+              <AppButton type="submit" variant="primary" disabled>
                 บันทึกรหัสผ่านใหม่
               </AppButton>
               <button
                 type="button"
                 class="student-account-form__reset"
-                :disabled="submitting"
+                disabled
                 @click="resetForm"
               >
                 ล้างฟอร์ม

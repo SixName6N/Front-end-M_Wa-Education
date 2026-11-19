@@ -122,7 +122,7 @@
   color: #111827
 }
 
-ctive {
+.teacher-navbar__role-btn--active {
   background-color: #ffffff;
   color: #015b7e;
   font-weight: 600;
@@ -338,10 +338,54 @@ ctive {
   font-weight: 600;
 }
 
+.teacher-mobile-nav {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .teacher-navbar__nav {
     display: none;
+  }
+
+  .teacher-mobile-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 8px 12px;
+    position: sticky;
+    top: 60px;
+    z-index: 30;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .teacher-mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .teacher-mobile-nav__link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .teacher-mobile-nav__link--active {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-weight: 600;
   }
 
   .teacher-navbar__inner {
@@ -355,5 +399,34 @@ ctive {
   .teacher-footer__inner {
     flex-direction: column;
     text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .teacher-navbar__teacher-name {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .teacher-navbar__role-switch {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .teacher-navbar__right {
+    gap: 8px;
+  }
+
+  .teacher-profile-dropdown {
+    right: -8px;
+    max-width: calc(100vw - 24px);
+  }
+}
+
+@media (max-width: 360px) {
+  .teacher-navbar__brand span {
+    display: none;
   }
 }

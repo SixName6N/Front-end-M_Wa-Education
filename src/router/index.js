@@ -4,6 +4,9 @@ import StudentExamListView from '@/views/StudentExamListView.vue'
 import TeacherStudentManagementView from '@/views/TeacherStudentManagementView.vue'
 import TeacherExamBuilderView from '@/views/TeacherExamBuilderView.vue'
 import TeacherExamBankView from '@/views/TeacherExamBankView.vue'
+import { useAuthStore } from '@/stores/authStore'
+import { hasStoredSession } from '@/services/authService'
+import { USER_ROLES } from '@/constants/auth.constants'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -124,10 +127,56 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.title) {
     document.title = to.meta.title
   }
+
+  const authStore = useAuthStore()
+
+  // กู้คืน session หากมี token ค้างอยู่และยังไม่ได้ restore
+  if (!authStore.isAuthenticated && hasStoredSession()) {
+    try {
+      await authStore.restore()
+    } catch {
+      // ปล่อยให้ flow ด้านล่างจัดการ
+    }
+  }
+
+  const isStudentRoute = to.path.startsWith('/student')
+  const isTeacherRoute = to.path.startsWith('/teacher')
+  const isLoginRoute = to.name === 'login' || to.path === '/'
+
+  // 1. ถ้าเข้าเส้นทางที่ต้องยืนยันตัวตนแต่ยังไม่ได้ล็อกอิน
+  if ((isStudentRoute || isTeacherRoute) && !authStore.isAuthenticated) {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  // 2. ถ้าล็อกอินแล้วและพยายามเข้าหน้า login
+  if (isLoginRoute && authStore.isAuthenticated) {
+    const role = (authStore.user?.role || '').toLowerCase()
+    if (role === USER_ROLES.TEACHER) {
+      return { name: 'teacher-exam-bank' }
+    }
+    return { name: 'student-exams' }
+  }
+
+  // 3. ตรวจสอบสิทธิ์ตามบทบาท (Role-based Guard)
+  if (authStore.isAuthenticated) {
+    const role = (authStore.user?.role || '').toLowerCase()
+    const isAdmin = role === USER_ROLES.ADMIN
+
+    if (!isAdmin) {
+      if (isTeacherRoute && role !== USER_ROLES.TEACHER) {
+        return { name: 'student-exams' }
+      }
+      if (isStudentRoute && role === USER_ROLES.TEACHER) {
+        return { name: 'teacher-exam-bank' }
+      }
+    }
+  }
+
+  return true
 })
 
 export default router

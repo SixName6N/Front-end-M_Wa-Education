@@ -62,7 +62,7 @@
               </button>
             </div>
 
-            <AppButton variant="primary" :disabled="isLocked" @click="openSubmitConfirm">
+            <AppButton variant="primary" :disabled="!canSubmit" @click="openSubmitConfirm">
               ส่งข้อสอบ
             </AppButton>
           </div>
@@ -226,7 +226,7 @@
                 <li><span class="exam-room__legend-dot"></span> ยังไม่ตอบ</li>
               </ul>
 
-              <AppButton variant="primary" block :disabled="isLocked" @click="openSubmitConfirm">
+              <AppButton variant="primary" block :disabled="!canSubmit" @click="openSubmitConfirm">
                 ส่งข้อสอบ
               </AppButton>
             </div>
@@ -257,6 +257,10 @@
 
           <p v-if="unansweredNumbers.length" class="exam-modal__unanswered">
             ข้อที่ยังไม่ได้ตอบ: {{ unansweredNumbers.join(', ') }}
+          </p>
+
+          <p v-if="timeUp" class="exam-modal__error" style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 13px;">
+            ⚠️ หมดเวลาทำข้อสอบแล้ว{{ dirtyIds.size > 0 ? ` — มีคำตอบ ${dirtyIds.size} ข้อที่ไม่สามารถบันทึกเพิ่มได้ทันเวลา` : '' }} ระบบจะส่งเฉพาะคำตอบที่ถูกบันทึกลงในระบบเรียบร้อยแล้วเท่านั้น
           </p>
 
           <p v-if="submitError" class="exam-modal__error">{{ submitError }}</p>
@@ -409,6 +413,11 @@ const isLocked = computed(
   () => submitting.value || submitted.value || timeUp.value || Boolean(frozenMessage.value)
 )
 
+/** สิทธิ์ในการส่งข้อสอบ: ยังไม่ได้ส่ง และไม่ได้กำลังส่ง (แม้หมดเวลาแล้วก็ยังส่งได้ตามกติกาของ backend) */
+const canSubmit = computed(
+  () => !submitting.value && !submitted.value && Boolean(submission.value)
+)
+
 const savedAtText = computed(() => {
   if (!lastSavedAt.value) return ''
   return lastSavedAt.value.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
@@ -469,13 +478,25 @@ function queueSave(questionId) {
   }, SAVE_DEBOUNCE_MS)
 }
 
+let activeSavePromise = null
+
 /** ส่งคำตอบที่ค้างอยู่ขึ้นเซิร์ฟเวอร์ (เรียกได้ทั้งจาก debounce และตอนกดส่งข้อสอบ) */
 async function flushSave() {
   if (saveTimer) {
     clearTimeout(saveTimer)
     saveTimer = null
   }
-  if (!submission.value || dirtyIds.size === 0) return
+
+  // ถ้าระหว่างนี้มี request บันทึกที่กำลังทำงานอยู่ ให้รอจนจบก่อน
+  if (activeSavePromise) {
+    try {
+      await activeSavePromise
+    } catch {
+      // รอจน promise เดิมเสร็จ แล้วจึงพิจารณา dirtyIds ที่ค้างอยู่ต่อไป
+    }
+  }
+
+  if (!submission.value || dirtyIds.size === 0) return true
 
   const ids = [...dirtyIds]
   dirtyIds.clear()
@@ -492,16 +513,28 @@ async function flushSave() {
   saveState.value = 'saving'
   saveError.value = ''
 
+  activeSavePromise = studentExamService.saveAnswers(submission.value.id, payload)
+    .then(() => {
+      saveState.value = 'saved'
+      lastSavedAt.value = new Date()
+      return true
+    })
+    .catch((err) => {
+      // เก็บกลับเข้า dirty เพื่อให้ผู้ใช้กด "ลองใหม่" ได้ ไม่ทำคำตอบสูญหาย
+      ids.forEach((id) => dirtyIds.add(id))
+      saveState.value = 'error'
+      saveError.value = err?.message || 'บันทึกคำตอบไม่สำเร็จ กรุณากดลองใหม่'
+      if (err?.status === 409) frozenMessage.value = err.message
+      throw err
+    })
+    .finally(() => {
+      activeSavePromise = null
+    })
+
   try {
-    await studentExamService.saveAnswers(submission.value.id, payload)
-    saveState.value = 'saved'
-    lastSavedAt.value = new Date()
-  } catch (err) {
-    // เก็บกลับเข้า dirty เพื่อให้กด "ลองใหม่" ได้
-    ids.forEach((id) => dirtyIds.add(id))
-    saveState.value = 'error'
-    saveError.value = err?.message || 'บันทึกคำตอบไม่สำเร็จ'
-    if (err?.status === 409) frozenMessage.value = err.message
+    return await activeSavePromise
+  } catch {
+    return false
   }
 }
 
@@ -557,25 +590,48 @@ function startTimer() {
 // submit / exit
 // ---------------------------------------------------------------------------
 function openSubmitConfirm() {
-  if (isLocked.value) return
+  if (!canSubmit.value) return
   submitError.value = ''
   showSubmitConfirm.value = true
 }
 
 async function confirmSubmit() {
-  if (submitting.value || !submission.value) return
+  if (!canSubmit.value) return
   submitting.value = true
   submitError.value = ''
 
   try {
-    // ให้คำตอบที่ค้างอยู่ถูกบันทึกก่อน (ถ้าบันทึกไม่ได้เพราะหมดเวลา ระบบยังให้ส่งได้)
-    await flushSave()
+    // 1. ถ้ายังไม่หมดเวลา ให้คำตอบที่ค้างอยู่ถูกบันทึกก่อน
+    if (!timeUp.value) {
+      const savedOk = await flushSave()
+      // ถ้าบันทึกไม่สำเร็จและยังมี dirtyIds ค้างอยู่ ให้หยุดการส่งและแจ้งเตือนผู้ใช้ เพื่อไม่ให้คำตอบล่าสุดสูญหาย
+      if (!savedOk && dirtyIds.size > 0) {
+        submitError.value = `ยังมีคำตอบ ${dirtyIds.size} ข้อที่กำลังบันทึกไม่สำเร็จ (${saveError.value || 'กรุณาลองกดลองใหม่'}) กรุณาบันทึกให้เรียบร้อยก่อนส่งข้อสอบ`
+        submitting.value = false
+        return
+      }
+    }
+
     await studentExamService.submitSubmission(submission.value.id, { displayMode: displayMode.value })
     submitted.value = true
     showSubmitConfirm.value = false
     dirtyIds.clear()
     stopTimer()
   } catch (err) {
+    // หากเกิดข้อผิดพลาด ให้ตรวจสถานะล่าสุดจาก backend เผื่อกรณีคำขอสำเร็จแล้วแต่ response มีปัญหา
+    try {
+      const latest = await studentExamService.getSubmission(submission.value.id)
+      if (latest && ['SUBMITTED', 'GRADED', 'RELEASED'].includes(latest.status)) {
+        submission.value = latest
+        submitted.value = true
+        showSubmitConfirm.value = false
+        dirtyIds.clear()
+        stopTimer()
+        return
+      }
+    } catch {
+      // ignore
+    }
     submitError.value = err?.message || 'ส่งข้อสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
   } finally {
     submitting.value = false
@@ -587,6 +643,14 @@ function backToList() {
 }
 
 function confirmExit() {
+  if (dirtyIds.size > 0 || saveState.value === 'saving') {
+    const ok = window.confirm(
+      'ยังมีคำตอบที่กำลังบันทึกหรือยังบันทึกไม่สำเร็จ หากออกจากห้องสอบตอนนี้ คำตอบล่าสุดอาจสูญหาย ยืนยันที่จะออกหรือไม่?'
+    )
+    if (ok) backToList()
+    return
+  }
+
   const ok = window.confirm(
     'ออกจากห้องสอบตอนนี้? ระบบบันทึกคำตอบที่ทำไว้แล้ว — กลับเข้ามาทำต่อได้ก่อนหมดเวลา'
   )
@@ -595,8 +659,10 @@ function confirmExit() {
 
 function handleBeforeUnload(event) {
   if (submitted.value || !submission.value) return
-  event.preventDefault()
-  event.returnValue = ''
+  if (dirtyIds.size > 0 || saveState.value === 'saving' || saveState.value === 'error') {
+    event.preventDefault()
+    event.returnValue = 'ยังมีคำตอบที่ยังบันทึกไม่สำเร็จ'
+  }
 }
 
 function stopTimer() {

@@ -66,9 +66,16 @@
 
 .roster-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: flex-start;
+}
+
+@media (min-width: 640px) {
+  .roster-actions {
+    justify-content: flex-end;
+  }
 }
 
 .roster-action-btn {
@@ -102,10 +109,12 @@
 .roster-table-responsive {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .roster-table {
   width: 100%;
+  min-width: 620px;
   border-collapse: collapse;
   text-align: left;
   font-size: 14px;

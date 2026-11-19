@@ -1,4 +1,4 @@
-import { apiClient, clearTokens, getAccessToken, getRefreshToken, setTokens } from './apiClient'
+import { apiClient, clearTokens, getAccessToken, getRefreshToken, getRefreshedToken, setTokens } from './apiClient'
 
 /** role ฝั่ง frontend เป็นตัวพิมพ์เล็ก แต่ API ต้องการตัวพิมพ์ใหญ่ */
 const API_ROLE = {
@@ -19,15 +19,23 @@ function toUiUser(user) {
 
 export const authService = {
   /**
-   * เข้าสู่ระบบด้วย identifier (อีเมล) + รหัสผ่าน
-   * API ยืนยันตัวตนด้วยอีเมล จึงส่ง identifier ไปเป็น email
+   * เข้าสู่ระบบด้วย identifier (อีเมล หรือ รหัสนักเรียน/ครู) + รหัสผ่าน
+   * รองรับทั้ง contract ใหม่ (identifier) และ email เดิม
    */
   async login({ identifier, password, role }) {
-    const { data } = await apiClient.post('/auth/login', {
-      email: String(identifier || '').trim(),
+    const trimmed = String(identifier || '').trim()
+    const payload = {
       password,
       role: API_ROLE[role] || String(role || '').toUpperCase()
-    })
+    }
+
+    if (trimmed.includes('@')) {
+      payload.email = trimmed
+    } else {
+      payload.identifier = trimmed
+    }
+
+    const { data } = await apiClient.post('/auth/login', payload)
 
     setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
 
@@ -54,13 +62,10 @@ export const authService = {
     return { success: true, user: toUiUser(data.user) }
   },
 
-  /** ต่ออายุ session ด้วย refresh token ที่เก็บไว้ (token ถูก rotate) */
+  /** ต่ออายุ session ด้วย refresh token ที่เก็บไว้ (token ถูก rotate แบบ single-flight) */
   async refresh() {
-    const refreshToken = getRefreshToken()
-    if (!refreshToken) throw new Error('ไม่มี refresh token')
-    const { data } = await apiClient.post('/auth/refresh', { refreshToken })
-    setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
-    return toUiUser(data.user)
+    await getRefreshedToken()
+    return authService.me()
   },
 
   /** ออกจากระบบ — เพิกถอน refresh token ฝั่ง server แล้วล้าง token ในเครื่อง */

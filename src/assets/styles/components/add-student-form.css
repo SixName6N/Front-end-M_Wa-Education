@@ -227,3 +227,29 @@
 .add-student-footer a:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 480px) {
+  .add-student-card {
+    padding: 16px;
+  }
+
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid-prefix-name {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-btn-submit,
+  .form-btn-reset {
+    width: 100%;
+    justify-content: center;
+  }
+}
+

@@ -52,7 +52,85 @@ function parseJson(text) {
   }
 }
 
-async function request(method, endpoint, data) {
+let refreshPromise = null
+
+async function requestRefreshToken() {
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) {
+    clearTokens()
+    throw new ApiError('ไม่มี refresh token สำหรับต่ออายุเซสชัน', {
+      status: 401,
+      code: 'NO_REFRESH_TOKEN'
+    })
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ refreshToken })
+    })
+
+    const payload = parseJson(await res.text())
+    if (!res.ok) {
+      const error = payload?.error ?? {}
+      const isTokenRejected =
+        res.status === 401 ||
+        res.status === 403 ||
+        error.code === 'REFRESH_EXPIRED' ||
+        error.code === 'INVALID_TOKEN'
+
+      // ล้าง token เฉพาะกรณีที่ backend ปฏิเสธ token จริงๆ (401/403/invalid)
+      // หากเกิด 5xx (เซิร์ฟเวอร์ error) จะไม่ล้าง token เพื่อให้ผู้ใช้สามารถ retry ได้
+      if (isTokenRejected) {
+        clearTokens()
+        throw new ApiError(error.message || 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่', {
+          status: res.status,
+          code: error.code || 'REFRESH_EXPIRED',
+          details: error.details ?? null
+        })
+      }
+
+      if (res.status >= 500) {
+        throw new ApiError('เซิร์ฟเวอร์ขัดข้องชั่วคราว ไม่สามารถต่ออายุเซสชันได้ กรุณาลองใหม่อีกครั้ง', {
+          status: res.status,
+          code: 'SERVER_ERROR',
+          details: error.details ?? null
+        })
+      }
+
+      throw new ApiError(error.message || 'ไม่สามารถต่ออายุเซสชันได้', {
+        status: res.status,
+        code: error.code ?? null,
+        details: error.details ?? null
+      })
+    }
+
+    setTokens({ accessToken: payload.accessToken, refreshToken: payload.refreshToken })
+    return payload.accessToken
+  } catch (err) {
+    // ล้าง token เฉพาะกรณีที่ backend ปฏิเสธ refresh token (เช่น 401, 403 หรือ REFRESH_EXPIRED)
+    // แต่ถ้าเป็น network error ชั่วคราว จะไม่ล้าง token เพื่อให้ลองใหม่เมื่อต่อเน็ตได้
+    if (err?.status === 401 || err?.status === 403 || err?.code === 'REFRESH_EXPIRED') {
+      clearTokens()
+    }
+    throw err
+  }
+}
+
+export async function getRefreshedToken() {
+  if (!refreshPromise) {
+    refreshPromise = requestRefreshToken().finally(() => {
+      refreshPromise = null
+    })
+  }
+  return refreshPromise
+}
+
+async function request(method, endpoint, data, { retry = true } = {}) {
   const headers = { Accept: 'application/json' }
   const token = getAccessToken()
   if (token) headers.Authorization = `Bearer ${token}`
@@ -76,6 +154,24 @@ async function request(method, endpoint, data) {
     })
   }
 
+  // ดักจับ 401 เพื่อทำ single-flight refresh และลองส่งคำขอเดิมอีก 1 ครั้ง
+  // ยกเว้นเฉพาะ login และ refresh เอง เพื่อป้องกัน loop แต่ /auth/me สามารถ refresh ได้
+  const isAuthNoRetry = endpoint === '/auth/login' || endpoint === '/auth/refresh'
+  if (response.status === 401 && retry && !isAuthNoRetry) {
+    try {
+      await getRefreshedToken()
+      return await request(method, endpoint, data, { retry: false })
+    } catch (refreshErr) {
+      throw refreshErr instanceof ApiError
+        ? refreshErr
+        : new ApiError('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่', {
+            status: 401,
+            code: 'SESSION_EXPIRED',
+            details: refreshErr
+          })
+    }
+  }
+
   const payload = parseJson(await response.text())
 
   if (!response.ok) {
@@ -91,9 +187,9 @@ async function request(method, endpoint, data) {
 }
 
 export const apiClient = {
-  get: (endpoint) => request('GET', endpoint),
-  post: (endpoint, data) => request('POST', endpoint, data),
-  put: (endpoint, data) => request('PUT', endpoint, data),
-  patch: (endpoint, data) => request('PATCH', endpoint, data),
-  delete: (endpoint) => request('DELETE', endpoint)
+  get: (endpoint, options) => request('GET', endpoint, undefined, options),
+  post: (endpoint, data, options) => request('POST', endpoint, data, options),
+  put: (endpoint, data, options) => request('PUT', endpoint, data, options),
+  patch: (endpoint, data, options) => request('PATCH', endpoint, data, options),
+  delete: (endpoint, options) => request('DELETE', endpoint, undefined, options)
 }
