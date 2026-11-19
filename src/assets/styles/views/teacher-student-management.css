@@ -4,6 +4,52 @@
   gap: 24px;
 }
 
+/* hidden input สำหรับนำเข้า CSV — ซ่อนแต่ยังกดผ่านปุ่มได้ */
+.student-mgmt-file-input {
+  display: none;
+}
+
+/* กล่องแสดงรหัสผ่านที่เพิ่งรีเซ็ต (ใน AppStateNotice) */
+.student-mgmt-password {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: #ffffff;
+  border: 1px dashed #1d4ed8;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #1e3a8a;
+  user-select: all;
+}
+
+.student-mgmt-btn {
+  height: 34px;
+  padding: 0 14px;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-light);
+  transition: background-color var(--transition-fast);
+}
+
+.student-mgmt-btn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.student-mgmt-btn--ghost {
+  background-color: transparent;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.student-mgmt-btn--ghost:hover {
+  background-color: #dbeafe;
+}
+
 /* 12-column workspace grid */
 .student-mgmt-grid {
   display: grid;
