@@ -154,7 +154,7 @@ function toRosterRow(student, index) {
     name: student.fullName ?? '',
     email: student.email ?? '',
     isActive,
-    status: isActive ? 'graded' : 'unsubmitted',
+    status: isActive ? 'active' : 'suspended',
     statusText: isActive ? 'ใช้งาน' : 'ระงับการใช้งาน',
     actionText: 'นำออกจากห้อง'
   }
