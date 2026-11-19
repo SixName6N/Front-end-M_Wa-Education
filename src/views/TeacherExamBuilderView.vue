@@ -73,6 +73,26 @@
       <div class="eb-workspace-grid">
         <!-- LEFT: QUESTIONS EDITOR (8 Cols) -->
         <div class="eb-main-col">
+          <!-- Builder Inline Feedback Alert -->
+          <div
+            v-if="builderFeedback.message"
+            class="eb-import-alert"
+            :class="`eb-import-alert--${builderFeedback.type}`"
+            role="alert"
+          >
+            <span class="material-symbols-outlined text-[18px]">
+              {{ builderFeedback.type === 'error' ? 'error' : (builderFeedback.type === 'success' ? 'check_circle' : 'info') }}
+            </span>
+            <p style="flex: 1;">{{ builderFeedback.message }}</p>
+            <button
+              type="button"
+              style="background:none; border:none; cursor:pointer; color:inherit; font-weight:bold; font-size:14px;"
+              @click="builderFeedback.message = ''"
+            >
+              ✕
+            </button>
+          </div>
+
           <!-- Section Tracker Header -->
           <div class="eb-tracker-bar">
             <div>
@@ -480,6 +500,12 @@
                   <span style="font-weight: 600; color: #ba1a1a; margin-left: 8px;">✕ ผิด (False)</span>
                 </label>
               </div>
+            </div>
+
+            <!-- Builder validation error -->
+            <div v-if="newFormError" class="eb-import-alert eb-import-alert--error" style="margin-bottom: 12px;">
+              <span class="material-symbols-outlined text-[18px]">error</span>
+              <p>{{ newFormError }}</p>
             </div>
 
             <!-- Builder Bottom Actions -->
@@ -1152,6 +1178,8 @@ const draftExamId = ref(
 )
 // questionsPersisted = ข้อสอบบนหน้าจอถูกบันทึกใน DB แล้วหรือยัง (กัน publish ซ้ำ)
 const questionsPersisted = ref(Boolean(draftExamId.value))
+const builderFeedback = reactive({ message: '', type: 'error' })
+const newFormError = ref('')
 
 const showImportModal = ref(false)
 const importInputRef = ref(null)
@@ -1280,8 +1308,11 @@ const copyQuestion = async (index) => {
     const created = await persistQuestion(examId, clone)
     if (created?.id) clone.remoteId = created.id
     await syncQuestionOrder()
+    builderFeedback.message = ''
   } catch (err) {
-    alert(`คัดลอกข้อสอบไม่สำเร็จ: ${err.message}`)
+    console.error('รายละเอียดข้อผิดพลาดคัดลอกข้อสอบ (Console Only):', err.technical || err.message || err)
+    builderFeedback.message = 'คัดลอกข้อสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+    builderFeedback.type = 'error'
   }
 }
 
@@ -1297,8 +1328,11 @@ const deleteQuestion = async (index) => {
     }
     await syncQuestionOrder()
     metadata.lastSavedText = 'ลบข้อสอบแล้ว'
+    builderFeedback.message = ''
   } catch (err) {
-    alert(`ลบข้อสอบไม่สำเร็จ: ${err.message}`)
+    console.error('รายละเอียดข้อผิดพลาดลบข้อสอบ (Console Only):', err.technical || err.message || err)
+    builderFeedback.message = 'ลบข้อสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+    builderFeedback.type = 'error'
   }
 }
 
@@ -1364,9 +1398,10 @@ const setBuilderType = (type) => {
 
 const saveNewQuestionToSet = async () => {
   if (!newForm.prompt.trim()) {
-    alert('กรุณากรอกข้อความโจทย์ข้อสอบ')
+    newFormError.value = 'กรุณากรอกข้อความโจทย์ข้อสอบ'
     return
   }
+  newFormError.value = ''
 
   const q = {
     id: Date.now(),
@@ -1412,14 +1447,18 @@ const saveNewQuestionToSet = async () => {
     if (created?.id) q.remoteId = created.id
     await syncQuestionOrder()
     metadata.lastSavedText = 'บันทึกข้อสอบใหม่แล้ว'
+    builderFeedback.message = ''
   } catch (err) {
-    alert(`บันทึกข้อสอบไม่สำเร็จ: ${err.message}`)
+    console.error('รายละเอียดข้อผิดพลาดบันทึกข้อสอบ (Console Only):', err.technical || err.message || err)
+    builderFeedback.message = 'บันทึกข้อสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+    builderFeedback.type = 'error'
   }
 
   setTimeout(() => scrollToBuilder(), 100)
 }
 
 const resetNewForm = () => {
+  newFormError.value = ''
   newForm.prompt = ''
   newForm.score = 1
   newForm.choices = [
@@ -1896,15 +1935,21 @@ const handlePublish = async () => {
 
     await examService.publishExam(examId)
 
-    alert(`บันทึกและเผยแพร่ชุดข้อสอบ "${metadata.title}" เรียบร้อยแล้ว!\nจำนวนข้อสอบ: ${questions.value.length} ข้อ\nคะแนนรวม: ${currentTotalScore.value}/${metadata.targetScore} คะแนน`)
-    router.push('/teacher/exams')
+    builderFeedback.message = `บันทึกและเผยแพร่ชุดข้อสอบ "${metadata.title}" เรียบร้อยแล้ว (จำนวน ${questions.value.length} ข้อ, ${currentTotalScore.value}/${metadata.targetScore} คะแนน)`
+    builderFeedback.type = 'success'
+    setTimeout(() => {
+      router.push('/teacher/exams')
+    }, 600)
   } catch (err) {
-    alert(`เกิดข้อผิดพลาดในการเผยแพร่ชุดข้อสอบ: ${err.message || 'กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง'}`)
+    console.error('รายละเอียดข้อผิดพลาดการเผยแพร่ชุดข้อสอบ (Console Only):', err.technical || err.message || err)
+    builderFeedback.message = 'เกิดข้อผิดพลาดในการเผยแพร่ชุดข้อสอบ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง'
+    builderFeedback.type = 'error'
   }
 }
 
 const handleEditRubric = () => {
-  alert('เปิดหน้าต่างแก้ไขเกณฑ์การให้คะแนนรูบริก (Rubric Editor)')
+  builderFeedback.message = 'ระบบแก้ไขเกณฑ์การให้คะแนนรูบริก (Rubric Editor) กำลังอยู่ระหว่างการพัฒนา'
+  builderFeedback.type = 'info'
 }
 
 const handleImportFile = () => {
@@ -2017,7 +2062,8 @@ const closeImportModal = () => {
 }
 
 const handleImportBank = () => {
-  alert('เปิดหน้าต่างเลือกข้อสอบจากคลังข้อสอบกลาง (Question Bank)')
+  builderFeedback.message = 'ระบบคลังข้อสอบกลาง (Question Bank) กำลังอยู่ระหว่างการพัฒนา'
+  builderFeedback.type = 'info'
 }
 </script>
 
