@@ -9,26 +9,19 @@
       <div class="auth-layout__header-inner">
         <!-- Back Button -->
         <button>
-          
+
         </button>
 
         <!-- Brand Center -->
         <div class="auth-layout__brand">
-         
+
         </div>
 
         <!-- Language Selector -->
         <div class="auth-layout__lang">
-          <button
-            type="button"
-            class="auth-layout__lang-btn"
-            @click="toggleLanguage"
-            :title="`Current: ${currentLang.toUpperCase()}`"
-          >
-            <IconGlobe size="16" />
-            <span>{{ currentLang === 'th' ? 'EN' : 'ไทย' }}</span>
-          </button>
+
         </div>
+
       </div>
     </header>
 
@@ -56,23 +49,13 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
 import { useLanguage } from '@/composables/useLanguage'
-import IconArrowLeft from '@/components/icons/IconArrowLeft.vue'
-import IconExamHub from '@/components/icons/IconExamHub.vue'
 import IconGlobe from '@/components/icons/IconGlobe.vue'
 
-const router = useRouter()
 const { currentLang, toggleLanguage } = useLanguage()
 const copyrightYear = 2025
 
-const handleBack = () => {
-  if (window.history.length > 1) {
-    router.back()
-  } else {
-    router.push('/')
-  }
-}
+
 </script>
 
 <style scoped src="@/assets/styles/layouts/auth-layout.css"></style>

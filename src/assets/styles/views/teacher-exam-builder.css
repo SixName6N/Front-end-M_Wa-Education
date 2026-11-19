@@ -1501,6 +1501,12 @@
   color: #15803d;
 }
 
+.eb-import-alert--info {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
 .eb-import-alert p {
   margin: 0;
 }

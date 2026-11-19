@@ -12,6 +12,28 @@
         @select-filter="handleFilterChange"
       />
 
+      <!-- Action Notice Banner -->
+      <div
+        v-if="actionNotice.message"
+        class="exam-action-notice"
+        :style="actionNotice.type === 'info' ? 'background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;' : 'background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;'"
+        role="status"
+      >
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="material-symbols-outlined text-[20px]">
+            {{ actionNotice.type === 'info' ? 'info' : 'error' }}
+          </span>
+          <span>{{ actionNotice.message }}</span>
+        </div>
+        <button
+          type="button"
+          style="background:none; border:none; cursor:pointer; color:inherit; font-weight:bold; font-size:14px;"
+          @click="actionNotice.message = ''"
+        >
+          ✕
+        </button>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="exam-status-box exam-status-box--loading">
         <div class="exam-spinner"></div>
@@ -147,6 +169,7 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const fetchError = ref(null)
 const rawExams = ref([])
+const actionNotice = reactive({ message: '', type: 'info' })
 
 // กำลังเริ่มทำข้อสอบชิ้นไหน + ข้อความ error ที่ได้จาก API (เช่น ไม่ได้อยู่ในห้อง/IP จำกัด)
 const startingExamId = ref('')
@@ -440,7 +463,14 @@ const handleStartExam = async (exam) => {
 }
 
 const handleReviewExam = (exam) => {
-  alert(`เปิดดูผลคะแนนและคำอธิบายเฉลย: ${exam.title}`)
+  try {
+    actionNotice.message = `เปิดดูผลคะแนนและคำอธิบายเฉลยของ "${exam.title}" (ระบบตรวจข้อสอบจริงกำลังเชื่อมต่อ)`
+    actionNotice.type = 'info'
+  } catch (err) {
+    console.error('รายละเอียดข้อผิดพลาดเปิดดูผลคะแนน (Console Only):', err)
+    actionNotice.message = 'ไม่สามารถดูผลคะแนนได้ กรุณาลองใหม่อีกครั้ง'
+    actionNotice.type = 'error'
+  }
 }
 </script>
 
