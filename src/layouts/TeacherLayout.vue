@@ -41,7 +41,14 @@
         <div class="teacher-navbar__right">
           <!-- Role Switcher -->
           <div class="teacher-navbar__role-switch">
-            <span>ครูผู้สอน</span>
+            <span>{{ authStore.isAdmin ? 'ผู้ดูแลระบบ' : 'ครูผู้สอน' }}</span>
+            <router-link
+              v-if="authStore.isAdmin"
+              to="/student/exams"
+              class="teacher-navbar__role-link"
+            >
+              สลับเป็นมุมมองนักเรียน
+            </router-link>
           </div>
 
           <div class="teacher-navbar__divider"></div>

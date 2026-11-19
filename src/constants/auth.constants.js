@@ -1,6 +1,8 @@
 export const USER_ROLES = {
   STUDENT: 'student',
-  TEACHER: 'teacher'
+  TEACHER: 'teacher',
+  // เข้าได้ทั้งฝั่งนักเรียนและฝั่งครู (บัญชีผู้ดูแล/เดโม)
+  ADMIN: 'admin'
 }
 
 export const ROLE_CONFIG = {

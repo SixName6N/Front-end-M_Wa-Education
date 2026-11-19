@@ -13,8 +13,12 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isStudent: (state) => state.currentRole === USER_ROLES.STUDENT,
-    isTeacher: (state) => state.currentRole === USER_ROLES.TEACHER
+    /** บัญชีผู้ดูแล: เข้าได้ทั้งฝั่งนักเรียนและฝั่งครู */
+    isAdmin: (state) => state.user?.role === USER_ROLES.ADMIN,
+    isStudent: (state, getters) =>
+      getters.isAdmin || state.currentRole === USER_ROLES.STUDENT,
+    isTeacher: (state, getters) =>
+      getters.isAdmin || state.currentRole === USER_ROLES.TEACHER
   },
 
   actions: {
@@ -84,6 +88,8 @@ export const useAuthStore = defineStore('auth', {
         this.user = null
         this.isAuthenticated = false
         this.error = null
+        // กลับไปค่าเริ่มต้น เพื่อให้หน้า login แสดงแท็บนักเรียนเป็นค่าเริ่มต้น
+        this.currentRole = USER_ROLES.STUDENT
       }
     }
   }
