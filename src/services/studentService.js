@@ -39,16 +39,6 @@ export const studentService = {
     return data
   },
 
-  /**
-   * เปิด/ระงับการใช้งานบัญชีนักเรียน (PATCH /students/:studentId)
-   * - ระงับ = isActive false → ล็อกอินไม่ได้ทุกห้องเรียน (ข้อมูลเดิมยังอยู่)
-   * - เปิดใช้งาน = isActive true
-   */
-  async updateStudentStatus(studentId, isActive) {
-    const { data } = await apiClient.patch(`/students/${studentId}`, { isActive })
-    return data?.student ?? null
-  },
-
   /** ดาวน์โหลดแม่แบบ CSV สำหรับนำเข้ารายชื่อนักเรียน */
   async downloadTemplate() {
     const token = getAccessToken()

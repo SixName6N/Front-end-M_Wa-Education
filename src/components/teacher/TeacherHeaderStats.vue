@@ -22,51 +22,26 @@
         @update:model-value="$emit('update:selectedRoom', $event)"
       />
 
-      <!-- Metric stats pills (นับจากรายชื่อจริงในห้อง) — กดเพื่อกรองตามสถานะบัญชี -->
-      <div
-        class="teacher-header-stats__metrics"
-        role="group"
-        aria-label="กรองรายชื่อตามสถานะบัญชี"
-      >
-        <button
-          type="button"
-          class="teacher-header-stats__metric-item"
-          :class="{ 'teacher-header-stats__metric-item--active': statusFilter === 'all' }"
-          :aria-pressed="statusFilter === 'all'"
-          title="แสดงนักเรียนทุกคน"
-          @click="$emit('update:statusFilter', 'all')"
-        >
-          <span class="teacher-header-stats__dot teacher-header-stats__dot--gray"></span>
-          <span>ทั้งหมด: <strong>{{ metrics.total }}</strong></span>
-        </button>
-
-        <span class="teacher-header-stats__sep">|</span>
-
-        <button
-          type="button"
-          class="teacher-header-stats__metric-item"
-          :class="{ 'teacher-header-stats__metric-item--active': statusFilter === 'active' }"
-          :aria-pressed="statusFilter === 'active'"
-          title="แสดงเฉพาะบัญชีที่ใช้งานได้"
-          @click="$emit('update:statusFilter', 'active')"
-        >
+      <!-- Metric stats pills (นับจากรายชื่อจริงในห้อง) -->
+      <div class="teacher-header-stats__metrics">
+        <div class="teacher-header-stats__metric-item">
           <span class="teacher-header-stats__dot teacher-header-stats__dot--green"></span>
-          <span>ใช้งาน: <strong>{{ metrics.active }}</strong></span>
-        </button>
+          <span>ทั้งหมด: <strong>{{ metrics.total }}</strong></span>
+        </div>
 
         <span class="teacher-header-stats__sep">|</span>
 
-        <button
-          type="button"
-          class="teacher-header-stats__metric-item"
-          :class="{ 'teacher-header-stats__metric-item--active': statusFilter === 'inactive' }"
-          :aria-pressed="statusFilter === 'inactive'"
-          title="แสดงเฉพาะบัญชีที่ถูกระงับ"
-          @click="$emit('update:statusFilter', 'inactive')"
-        >
+        <div class="teacher-header-stats__metric-item">
           <span class="teacher-header-stats__dot teacher-header-stats__dot--amber"></span>
+          <span>ใช้งาน: <strong>{{ metrics.active }}</strong></span>
+        </div>
+
+        <span class="teacher-header-stats__sep">|</span>
+
+        <div class="teacher-header-stats__metric-item">
+          <span class="teacher-header-stats__dot teacher-header-stats__dot--gray"></span>
           <span>ระงับ: <strong>{{ metrics.inactive }}</strong></span>
-        </button>
+        </div>
       </div>
     </div>
   </div>
@@ -90,18 +65,13 @@ defineProps({
     type: Object,
     default: () => ({ total: 0, active: 0, inactive: 0 })
   },
-  /** ตัวกรองสถานะบัญชีที่เลือกอยู่: 'all' | 'active' | 'inactive' */
-  statusFilter: {
-    type: String,
-    default: 'all'
-  },
   loading: {
     type: Boolean,
     default: false
   }
 })
 
-defineEmits(['update:selectedRoom', 'update:statusFilter'])
+defineEmits(['update:selectedRoom'])
 
 const session = TEACHER_PROFILE.academicSession
 </script>
