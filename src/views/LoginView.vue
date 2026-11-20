@@ -108,13 +108,13 @@
         style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;"
         @click.self="showGuideModal = false"
       >
-        <div style="background: white; border-radius: 12px; max-width: 500px; width: 100%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        <div style="background: white; border-radius: 12px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">คู่มือการสอบ ExamHub</h3>
             <button type="button" style="background:none; border:none; cursor:pointer; font-size: 20px; color: #64748b;" @click="showGuideModal = false">✕</button>
           </div>
           <div style="font-size: 14px; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
-            <p>1. เข้าสู่ระบบด้วยรหัสนักเรียนหรืออีเมลที่ได้รับจากทางโรงเรียน</p>
+            <p>1. เข้าสู่ระบบด้วยอีเมลโรงเรียนและรหัสผ่านที่ได้รับจากทางโรงเรียน</p>
             <p>2. ตรวจสอบรายชื่อชุดข้อสอบที่เปิดให้สอบในเมนู "รายการข้อสอบ"</p>
             <p>3. หากเกิดปัญหาการเข้าสู่ระบบหรือลืมรหัสผ่าน กรุณาติดต่อครูผู้สอนหรือฝ่ายทะเบียน-วัดผล</p>
           </div>

@@ -297,6 +297,12 @@
   text-align: left;
   transition: all var(--transition-fast);
   font-family: inherit;
+  color: #334155;
+}
+
+.student-profile-dropdown__item:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 .student-profile-dropdown__item--danger {
@@ -347,6 +353,10 @@
   text-decoration: underline;
 }
 
+.student-mobile-nav {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 860px) {
   .student-navbar__user-info {
@@ -364,6 +374,45 @@
     display: none;
   }
 
+  .student-mobile-nav {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    position: sticky;
+    top: 56px;
+    z-index: 30;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .student-mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .student-mobile-nav__link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .student-mobile-nav__link--active {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-weight: 600;
+  }
+
   .student-layout__main {
     padding: 16px 12px 36px;
   }
@@ -371,5 +420,23 @@
   .student-footer__inner {
     flex-direction: column;
     text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .student-navbar__role-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  .student-profile-dropdown {
+    right: -8px;
+    max-width: calc(100vw - 24px);
+  }
+}
+
+@media (max-width: 360px) {
+  .student-navbar__brand-name {
+    display: none;
   }
 }

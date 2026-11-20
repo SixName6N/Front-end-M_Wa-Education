@@ -1,0 +1,158 @@
+.student-account-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* หัวหน้าเพจ */
+.student-account-head__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.student-account-head__desc {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* การ์ด 2 คอลัมน์บนจอใหญ่ */
+.student-account-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .student-account-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.student-account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.student-account-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+/* ตารางข้อมูลบัญชี */
+.student-account-info {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.student-account-info__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.student-account-info__row:last-child {
+  border-bottom: none;
+}
+
+.student-account-info__row dt {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.student-account-info__row dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  text-align: right;
+  word-break: break-word;
+}
+
+.student-account-info__value--mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* ฟอร์มเปลี่ยนรหัสผ่าน */
+.student-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.student-account-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.student-account-form__reset {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+
+.student-account-form__reset:hover:not(:disabled) {
+  color: var(--color-text-body);
+  text-decoration: underline;
+}
+
+.student-account-form__reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.student-account-hint {
+  margin: 0;
+  padding-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 420px) {
+  .student-account-card {
+    padding: 16px;
+  }
+
+  .student-account-info__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .student-account-info__row dd {
+    text-align: left;
+  }
+
+  .student-account-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .student-account-form__actions .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+

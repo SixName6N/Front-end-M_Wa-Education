@@ -1,3 +1,7 @@
+.about {
+  padding: 24px 16px;
+}
+
 @media (min-width: 1024px) {
   .about {
     min-height: 100vh;
@@ -5,3 +9,4 @@
     align-items: center;
   }
 }
+

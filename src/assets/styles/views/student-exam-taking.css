@@ -1,0 +1,694 @@
+/* ==========================================================================
+   Student Exam Room (หน้าทำข้อสอบ) — ใช้ token จาก variables.css
+   ========================================================================== */
+
+.exam-room {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* --- สถานะเต็มหน้า (กำลังโหลด / เข้าห้องสอบไม่ได้) --- */
+.exam-room__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 56px 24px;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.exam-room__spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: exam-room-spin 0.8s linear infinite;
+}
+
+@keyframes exam-room-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.exam-room__state-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.exam-room__notice-btn {
+  height: 34px;
+  padding: 0 16px;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-light);
+  transition: background-color var(--transition-fast);
+}
+
+.exam-room__notice-btn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* --- แถบเครื่องมือด้านบน --- */
+.exam-room__bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.exam-room__exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: var(--color-bg-muted);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  transition: background-color var(--transition-fast);
+}
+
+.exam-room__exit:hover {
+  background-color: #e2e8f0;
+}
+
+.exam-room__info {
+  flex: 1;
+  min-width: 180px;
+}
+
+.exam-room__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-heading);
+  line-height: 1.35;
+}
+
+.exam-room__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.exam-room__dot {
+  color: var(--color-text-placeholder);
+}
+
+.exam-room__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* --- เวลาที่เหลือ --- */
+.exam-room__timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  background-color: var(--color-primary-light);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.exam-room__timer--warning {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.exam-room__timer--danger {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  animation: exam-room-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes exam-room-pulse {
+  50% {
+    opacity: 0.65;
+  }
+}
+
+/* --- สถานะการบันทึกอัตโนมัติ --- */
+.exam-room__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.exam-room__save--saving,
+.exam-room__save--pending {
+  color: var(--color-accent);
+}
+
+.exam-room__save--saved {
+  color: var(--color-success);
+}
+
+.exam-room__save--error {
+  color: var(--color-danger);
+}
+
+.exam-room__save-retry {
+  padding: 3px 9px;
+  background-color: #fee2e2;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.exam-room__save-retry:hover {
+  background-color: #fecaca;
+}
+
+/* --- โครงหน้า: โจทย์ + แผงนำทาง --- */
+.exam-room__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 262px;
+  gap: 18px;
+  align-items: start;
+}
+
+.exam-room__main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* --- สลับมุมมอง --- */
+.exam-room__mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.exam-room__mode-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.exam-room__mode-btn {
+  padding: 6px 12px;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  transition: all var(--transition-fast);
+}
+
+.exam-room__mode-btn:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+}
+
+.exam-room__mode-btn--active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-light);
+}
+
+.exam-room__mode-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- การ์ดโจทย์ --- */
+.question-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 110px;
+}
+
+.question-card--answered {
+  border-left: 3px solid var(--color-success);
+}
+
+.question-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.question-card__no {
+  padding: 3px 10px;
+  background-color: var(--color-primary-light);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.question-card__type {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.question-card__answered {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.question-card__prompt {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-text-main);
+  white-space: pre-wrap;
+}
+
+/* --- ตัวเลือกปรนัย --- */
+.question-card__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.choice:hover {
+  border-color: var(--color-border-hover);
+  background-color: var(--color-bg-muted);
+}
+
+.choice--selected {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.choice__input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+  cursor: inherit;
+}
+
+.choice__label {
+  flex-shrink: 0;
+  min-width: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.choice__text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-body);
+  word-break: break-word;
+}
+
+/* --- คำตอบอัตนัย --- */
+.question-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.question-card__textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-main);
+  resize: vertical;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.question-card__textarea:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-focus);
+}
+
+.question-card__textarea:disabled {
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.question-card__counter {
+  align-self: flex-end;
+  font-size: 11px;
+  color: var(--color-text-placeholder);
+}
+
+/* --- ตัวแบ่งหน้า --- */
+.exam-room__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.exam-room__pager-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 14px;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  transition: all var(--transition-fast);
+}
+
+.exam-room__pager-btn:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+  background-color: var(--color-bg-subtle);
+}
+
+.exam-room__pager-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.exam-room__pager-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* --- แผงนำทาง / กระดาษคำตอบ --- */
+.exam-room__side {
+  position: sticky;
+  top: 108px;
+}
+
+.exam-room__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.exam-room__nav-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.exam-room__nav-sub {
+  margin: -6px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.exam-room__nav-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.exam-room__nav-item {
+  height: 34px;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-body);
+  transition: all var(--transition-fast);
+}
+
+.exam-room__nav-item:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.exam-room__nav-item--answered {
+  background-color: #d1fae5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.exam-room__nav-item--current {
+  box-shadow: 0 0 0 2px var(--color-primary-focus);
+  border-color: var(--color-primary);
+}
+
+.exam-room__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.exam-room__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.exam-room__legend-dot {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background-color: var(--color-bg-subtle);
+}
+
+.exam-room__legend-dot--answered {
+  background-color: #d1fae5;
+  border-color: #a7f3d0;
+}
+
+/* --- Modal --- */
+.exam-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: rgba(15, 23, 42, 0.5);
+}
+
+.exam-modal__card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.exam-modal__card--success {
+  align-items: center;
+  text-align: center;
+}
+
+.exam-modal__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background-color: #d1fae5;
+  border-radius: var(--radius-full);
+  color: #047857;
+}
+
+.exam-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.exam-modal__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.exam-modal__stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.exam-modal__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.exam-modal__stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.exam-modal__stat-value--warn {
+  color: #b45309;
+}
+
+.exam-modal__stat-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.exam-modal__unanswered {
+  margin: 0;
+  padding: 10px 12px;
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #92400e;
+}
+
+.exam-modal__error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-danger);
+}
+
+.exam-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.exam-modal__card--success .exam-modal__actions {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 980px) {
+  .exam-room__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .exam-room__side {
+    position: static;
+    order: -1;
+  }
+
+  .exam-room__nav-grid {
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    max-height: 140px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 620px) {
+  .exam-room__bar {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .exam-room__status {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .exam-room__title {
+    font-size: 14px;
+  }
+
+  .question-card {
+    padding: 14px;
+  }
+
+  .exam-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .exam-modal__actions :deep(.app-btn) {
+    width: 100%;
+  }
+}
+

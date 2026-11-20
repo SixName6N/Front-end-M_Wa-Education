@@ -62,3 +62,18 @@
 .home-card__btn:hover {
   background-color: var(--color-primary-hover);
 }
+
+@media (max-width: 480px) {
+  .home-container {
+    padding: 16px;
+  }
+
+  .home-card {
+    padding: 24px 16px;
+  }
+
+  .home-card__btn {
+    width: 100%;
+    text-align: center;
+  }
+}

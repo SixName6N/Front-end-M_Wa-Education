@@ -103,10 +103,12 @@
         v-if="exam.type === 'open'"
         type="button"
         class="exam-card__btn exam-card__btn--primary"
+        :disabled="busy"
         @click="$emit('start-exam', exam)"
       >
-        <span>{{ exam.buttonText }}</span>
-        <IconArrowRight size="14" />
+        <span v-if="busy" class="exam-card__btn-spinner"></span>
+        <span>{{ busy ? 'กำลังเข้าห้องสอบ...' : exam.buttonText }}</span>
+        <IconArrowRight v-if="!busy" size="14" />
       </button>
 
       <button
@@ -144,6 +146,11 @@ defineProps({
   exam: {
     type: Object,
     required: true
+  },
+  /** กำลังเริ่มทำข้อสอบ (ปุ่มถูกกดอยู่) — ปิดปุ่มกันกดซ้ำ */
+  busy: {
+    type: Boolean,
+    default: false
   }
 })
 

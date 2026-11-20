@@ -49,13 +49,7 @@
 </template>
 
 <script setup>
-import { useLanguage } from '@/composables/useLanguage'
-import IconGlobe from '@/components/icons/IconGlobe.vue'
-
-const { currentLang, toggleLanguage } = useLanguage()
 const copyrightYear = 2025
-
-
 </script>
 
 <style scoped src="@/assets/styles/layouts/auth-layout.css"></style>

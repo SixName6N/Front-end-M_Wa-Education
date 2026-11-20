@@ -4,6 +4,52 @@
   gap: 24px;
 }
 
+/* hidden input สำหรับนำเข้า CSV — ซ่อนแต่ยังกดผ่านปุ่มได้ */
+.student-mgmt-file-input {
+  display: none;
+}
+
+/* กล่องแสดงรหัสผ่านที่เพิ่งรีเซ็ต (ใน AppStateNotice) */
+.student-mgmt-password {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: #ffffff;
+  border: 1px dashed #1d4ed8;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #1e3a8a;
+  user-select: all;
+}
+
+.student-mgmt-btn {
+  height: 34px;
+  padding: 0 14px;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-light);
+  transition: background-color var(--transition-fast);
+}
+
+.student-mgmt-btn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.student-mgmt-btn--ghost {
+  background-color: transparent;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.student-mgmt-btn--ghost:hover {
+  background-color: #dbeafe;
+}
+
 /* 12-column workspace grid */
 .student-mgmt-grid {
   display: grid;
@@ -24,4 +70,379 @@
   .student-mgmt-grid__right {
     grid-column: span 4;
   }
+}
+
+/* ==========================================================================
+   Import CSV / Excel Modal
+   ========================================================================== */
+.import-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: importModalFadeIn 0.2s ease-out;
+}
+
+@keyframes importModalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.import-modal-box {
+  background-color: #ffffff;
+  border-radius: 16px;
+  max-width: 760px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.import-modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  background-color: #ffffff;
+}
+
+.import-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.import-modal-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.import-modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.import-modal-close:hover:not(:disabled) {
+  color: #334155;
+  background-color: #f1f5f9;
+}
+
+.import-modal-close:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.import-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.import-modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.import-modal-loading {
+  text-align: center;
+  padding: 48px 16px;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.import-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: importSpin 0.8s linear infinite;
+}
+
+@keyframes importSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.import-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.import-stat-card {
+  padding: 12px 14px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.import-stat-card--create {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.import-stat-card--create .import-stat-value {
+  color: #16a34a;
+}
+
+.import-stat-card--enroll {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.import-stat-card--enroll .import-stat-value {
+  color: #2563eb;
+}
+
+.import-stat-card--skip {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.import-stat-card--skip .import-stat-value {
+  color: #64748b;
+}
+
+.import-stat-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.import-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.import-hint-box {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.import-error-lead {
+  font-size: 13px;
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0 0 8px;
+}
+
+.import-table-wrapper {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  overflow-x: auto;
+  max-height: 280px;
+  background-color: #ffffff;
+}
+
+.import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.import-table th {
+  background-color: #f8fafc;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.import-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.import-table tr:last-child td {
+  border-bottom: none;
+}
+
+.import-table--error th {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border-bottom-color: #fecaca;
+}
+
+.import-error-row-num {
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.import-error-row-msg {
+  color: #991b1b;
+  white-space: normal;
+}
+
+.import-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.import-badge--create {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.import-badge--enroll {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.import-badge--skip {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.import-password-section {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-password-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.import-password-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.import-password-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+.import-copy-all-btn {
+  padding: 6px 14px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.import-copy-all-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.import-copy-single-btn {
+  padding: 4px 10px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.import-copy-single-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.import-btn {
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.import-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.import-btn--primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+}
+
+.import-btn--primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.import-btn--ghost {
+  background-color: transparent;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.import-btn--ghost:hover:not(:disabled) {
+  background-color: #f1f5f9;
 }

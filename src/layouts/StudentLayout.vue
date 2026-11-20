@@ -78,6 +78,15 @@
               <div class="student-profile-dropdown__divider"></div>
 
               <div class="student-profile-dropdown__menu">
+                <router-link
+                  to="/student/account"
+                  class="student-profile-dropdown__item"
+                  @click="isMenuOpen = false"
+                >
+                  <span class="material-symbols-outlined text-[18px]">key</span>
+                  <span>เปลี่ยนรหัสผ่าน</span>
+                </router-link>
+
                 <button
                   type="button"
                   class="student-profile-dropdown__item student-profile-dropdown__item--danger"
@@ -92,6 +101,25 @@
         </div>
       </div>
     </header>
+
+    <!-- Mobile Sub-navigation Bar (Visible on screens <= 680px) -->
+    <nav class="student-mobile-nav" aria-label="เมนูหลักนักเรียน">
+      <router-link
+        to="/student/exams"
+        class="student-mobile-nav__link student-mobile-nav__link--active"
+      >
+        <span class="material-symbols-outlined text-[18px]">assignment</span>
+        <span>ข้อสอบของฉัน</span>
+      </router-link>
+      <a href="#" class="student-mobile-nav__link" @click.prevent>
+        <span class="material-symbols-outlined text-[18px]">history</span>
+        <span>ประวัติการสอบ</span>
+      </a>
+      <a href="#" class="student-mobile-nav__link" @click.prevent>
+        <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+        <span>ตารางสอบ</span>
+      </a>
+    </nav>
 
     <!-- Main Content Area -->
     <main class="student-layout__main">

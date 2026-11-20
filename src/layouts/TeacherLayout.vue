@@ -82,7 +82,9 @@
                 </div>
                 <div class="teacher-profile-dropdown__info">
                   <div class="teacher-profile-dropdown__name">{{ fullName }}</div>
-                  <div class="teacher-profile-dropdown__role">ครูผู้สอน • {{ academicSession }}</div>
+                  <div class="teacher-profile-dropdown__role">
+                    ครูผู้สอน<template v-if="academicSession"> • {{ academicSession }}</template>
+                  </div>
                 </div>
               </div>
 
@@ -104,6 +106,34 @@
       </div>
     </header>
 
+    <!-- Mobile Sub-navigation Bar (Visible on screens <= 768px) -->
+    <nav class="teacher-mobile-nav" aria-label="เมนูหลักครูผู้สอน">
+      <router-link
+        to="/teacher/exams/"
+        class="teacher-mobile-nav__link"
+        :class="{ 'teacher-mobile-nav__link--active': isExamsActive }"
+      >
+        <span class="material-symbols-outlined text-[18px]">folder_open</span>
+        <span>คลังข้อสอบ</span>
+      </router-link>
+      <router-link
+        to="/teacher/grading"
+        class="teacher-mobile-nav__link"
+        :class="{ 'teacher-mobile-nav__link--active': isGradingActive }"
+      >
+        <span class="material-symbols-outlined text-[18px]">fact_check</span>
+        <span>ตรวจข้อสอบ</span>
+      </router-link>
+      <router-link
+        to="/teacher/students"
+        class="teacher-mobile-nav__link"
+        :class="{ 'teacher-mobile-nav__link--active': isStudentsActive }"
+      >
+        <span class="material-symbols-outlined text-[18px]">group</span>
+        <span>รายชื่อนักเรียน</span>
+      </router-link>
+    </nav>
+
     <!-- Main Content Area -->
     <main class="teacher-layout__main">
       <slot />
@@ -118,7 +148,7 @@
           <span>ระบบคลังข้อสอบและตรวจผลสอบ</span>
         </div>
         <div>
-          <span>อาจารย์ผู้สอน: {{ teacher.name }}</span>
+          <span>อาจารย์ผู้สอน: {{ fullName }}</span>
         </div>
       </div>
     </footer>
@@ -130,7 +160,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import IconExamHub from '@/components/icons/IconExamHub.vue'
-import { TEACHER_PROFILE } from '@/constants/teacher.constants'
 
 const props = defineProps({
   activeTab: {
@@ -142,21 +171,22 @@ const props = defineProps({
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const teacher = TEACHER_PROFILE
 
 // Profile dropdown state
 const profileRef = ref(null)
 const isMenuOpen = ref(false)
 
 const displayName = computed(() => {
-  return authStore.user?.fullName || authStore.user?.name || teacher.shortName
+  return authStore.user?.fullName || authStore.user?.name || authStore.user?.email || 'ครูผู้สอน'
 })
 
 const fullName = computed(() => {
-  return authStore.user?.fullName || authStore.user?.name || teacher.name
+  return authStore.user?.fullName || authStore.user?.name || authStore.user?.email || 'ครูผู้สอน'
 })
 
-const academicSession = teacher.academicSession || 'ภาคเรียนที่ 1/2568'
+const academicSession = computed(() => {
+  return authStore.user?.academicSession || ''
+})
 
 const handleClickOutside = (e) => {
   if (profileRef.value && !profileRef.value.contains(e.target)) {

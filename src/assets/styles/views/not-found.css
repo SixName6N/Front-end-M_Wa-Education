@@ -143,4 +143,13 @@
   .not-found-card__title {
     font-size: 19px;
   }
+
+  .not-found-card__actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .not-found-card__btn {
+    width: 100%;
+  }
 }

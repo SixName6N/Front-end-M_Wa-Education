@@ -25,9 +25,10 @@ export function mapApiExamToView(item) {
     statusText: mapped.statusText,
     title: item.title,
     questionsCount: item._count?.questions ?? item.questions?.length ?? 0,
-    totalPoints: item.totalPoints ?? (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
-    maxScore: item.totalPoints ?? (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
-    duration: item.timeLimitMinutes || 60,
+    totalPoints: Number(item.totalsPoints ?? item.totalPoints) || (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
+    maxScore: Number(item.totalsPoints ?? item.totalPoints) || (Array.isArray(item.questions) ? item.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0),
+    duration: item.timeLimitMinutes !== null && item.timeLimitMinutes !== undefined ? item.timeLimitMinutes : null,
+    durationText: item.timeLimitMinutes !== null && item.timeLimitMinutes !== undefined ? `${item.timeLimitMinutes} นาที` : 'ไม่จำกัดเวลา',
     scheduleInfo: item.updatedAt
       ? `แก้ไขล่าสุด ${new Date(item.updatedAt).toLocaleDateString('th-TH')}`
       : 'พร้อมใช้งาน',
@@ -42,47 +43,31 @@ export function mapApiExamToView(item) {
 /**
  * แปลงคำถามจาก UI → body ของ POST /api/exams/:examId/questions
  * @param {Object} question - UI question model
- * @param {number} index - Question order index
  */
-export function toApiQuestion(question, index) {
-  const base = {
-    prompt: String(question?.prompt ?? '').trim(),
-    points: Number(question?.score) || 0,
-    order: index,
-    explanation: question?.explanation?.trim() || null
-  }
+export function toApiQuestion(question) {
+  const thaiLabels = ['ก.', 'ข.', 'ค.', 'ง.', 'จ.', 'ฉ.']
+  const type = question.type === 'choice' || question.type === 'true_false'
+    ? 'MULTIPLE_CHOICE'
+    : question.type === 'short_answer' ? 'SHORT_ANSWER' : 'LONG_ANSWER'
 
-  // ปรนัย + ถูก/ผิด → MULTIPLE_CHOICE (ต้องมีเฉลยถูก 1 ตัวเลือก)
-  if (question?.type === 'choice' || question?.type === 'true_false') {
-    return {
-      ...base,
-      type: 'MULTIPLE_CHOICE',
-      choices: (question.choices ?? []).map((choice, choiceIndex) => ({
-        label: String(choice?.label ?? '').trim() || `${choiceIndex + 1}.`,
-        text: String(choice?.text ?? '').trim(),
-        isCorrect: Boolean(choice?.isCorrect),
-        order: choiceIndex
-      }))
-    }
-  }
-
-  // ตอบสั้น → เก็บคำตอบที่ยอมรับทั้งหมดไว้ใน referenceText
-  if (question?.type === 'short_answer') {
-    return {
-      ...base,
-      type: 'SHORT_ANSWER',
-      referenceText: (question.acceptableKeys ?? []).join(', ') || null
-    }
-  }
-
-  // เขียนบรรยาย → เก็บ rubric / เกณฑ์การให้คะแนนไว้ใน referenceText
+  // ไม่ส่ง order ของข้อ: backend เพิ่มท้ายชุด และการจัดลำดับใช้ API แยก
+  // ไม่ส่ง referenceText ของข้อเขียนที่ไม่ได้แก้ เพื่อรักษาข้อมูลเดิมบน backend
   return {
-    ...base,
-    type: 'LONG_ANSWER',
-    referenceText:
-      (question?.rubrics ?? [])
-        .map((rubric) => `${rubric.title}: ${rubric.desc} (${rubric.score} คะแนน)`)
-        .join('\n') || null
+    type,
+    prompt: question.prompt,
+    points: Number(question.score) || 1,
+    explanation: question.explanation ? String(question.explanation).trim() : null,
+    ...(question.type === 'short_answer'
+      ? { referenceText: (question.acceptableKeys ?? []).join('\n') || null }
+      : {}),
+    ...(question.choices
+      ? { choices: question.choices.map((choice, index) => ({
+          label: choice.label || thaiLabels[index] || 'ก.',
+          text: choice.text,
+          isCorrect: !!choice.isCorrect,
+          order: index
+        })) }
+      : {})
   }
 }
 

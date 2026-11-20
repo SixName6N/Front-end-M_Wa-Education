@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { USER_ROLES } from '@/constants/auth.constants'
 import { authService, hasStoredSession } from '@/services/authService'
 
+let restorePromise = null
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
@@ -9,7 +11,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: false,
     isLoading: false,
     error: null,
-    session: 'Session 2/2568'
+    session: ''
   }),
 
   getters: {
@@ -61,17 +63,44 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /** กู้ session เดิมตอนเปิดแอป ถ้ามี token เก็บอยู่ */
+    /**
+     * เปลี่ยนรหัสผ่านของบัญชีตัวเอง — ต้องยืนยันด้วยรหัสผ่านปัจจุบัน
+     * (backend จะออก token ชุดใหม่ให้เครื่องนี้ และเพิกถอน session เครื่องอื่น)
+     */
+    async changePassword(payload) {
+      const result = await authService.changePassword(payload)
+      this.applySession(result.user)
+      return result
+    },
+
+    /** กู้ session เดิมตอนเปิดแอป ถ้ามี token เก็บอยู่ (single-flight) */
     async restore() {
-      if (this.isAuthenticated || !hasStoredSession()) return
-      try {
-        const user = await authService.me()
-        this.applySession(user)
-      } catch {
-        // token หมดอายุ/ไม่ถูกต้อง — ถือว่ายังไม่ล็อกอิน
+      if (this.isAuthenticated) return this.user
+      if (!hasStoredSession()) {
         this.user = null
         this.isAuthenticated = false
+        return null
       }
+      if (restorePromise) return restorePromise
+
+      restorePromise = (async () => {
+        try {
+          const user = await authService.me()
+          this.applySession(user)
+          return user
+        } catch (err) {
+          // ถ้าถูกปฏิเสธสิทธิ์ (401/403) ถือว่าเซสชันหมดอายุ
+          if (err?.status === 401 || err?.status === 403) {
+            this.user = null
+            this.isAuthenticated = false
+          }
+          return null
+        } finally {
+          restorePromise = null
+        }
+      })()
+
+      return restorePromise
     },
 
     async ssoLogin(provider) {

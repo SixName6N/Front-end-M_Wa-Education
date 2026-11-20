@@ -176,6 +176,19 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 639px) {
+  .eb-title-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .eb-title-actions .eb-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* Buttons */
 .eb-btn {
   display: inline-flex;
@@ -362,7 +375,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .eb-card-header-left {
@@ -1766,3 +1780,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .eb-top-bar {
+    padding: 12px 14px;
+  }
+
+  .eb-card {
+    padding: 14px;
+  }
+
+  .eb-modal-top,
+  .eb-modal-scroll,
+  .eb-modal-bottom {
+    padding: 12px 14px;
+  }
+
+  .eb-modal-box {
+    max-height: 90vh;
+    border-radius: 10px;
+  }
+}
+
